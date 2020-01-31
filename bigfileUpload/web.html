@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>大文件上传</title>
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+  <div>
+    <input type="file" @change="handleFileChange"/>
+    <el-button @click="handleUpload">上传</el-button>
+  </div>
+</div>
+
+<script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+  // 每个切片的大小 10MB
+  const SIZE = 10 * 1024 * 1024;
+
+  const vm = new Vue({
+    el: '#app',
+    data: {
+      container: {
+        file: null
+      },
+      data: []
+    },
+    methods: {
+      // 请求方法
+      request({
+                url,
+                method = "post",
+                data,
+                headers = {},
+                requestList
+              }) {
+        return new Promise(resolve => {
+          const xhr = new XMLHttpRequest();
+          xhr.open(method, url);
+          Object.keys(headers).forEach(key =>
+            xhr.setRequestHeader(key, headers[key])
+          );
+          xhr.send(data);
+          xhr.onload = e => {
+            resolve({
+              data: e.target.response
+            });
+          };
+        });
+      },
+      // 修改上传文件的方法
+      handleFileChange(e) {
+        const [file] = e.target.files;
+        if (!file) return;
+        Object.assign(this.$data, this.$options.data);
+        // 保存选择文件的信息
+        this.container.file = file;
+      },
+      // 点击上传
+      async handleUpload() {
+        if (!this.container.file) return;
+        // 生成切片数组
+        const fileChunkList = this.createFileChunk(this.container.file);
+        // 修改记录切片的数据，并保持到data
+        this.data = fileChunkList.map(({file}, index) => ({
+          chunk: file,
+          hash: this.container.file.name + '-' + index // 文件名 + 数组下标
+        }));
+        await this.uploadChunks();
+      },
+      // 生成文件切片
+      createFileChunk(file, size = SIZE) {
+        const fileChunkList = [];
+        let cur = 0;
+        while (cur < file.size) {
+          // Blob.slice 返回一个新的 Blob 对象，它包含了原始 Blob 对象的某一个段的数据。
+          fileChunkList.push({file: file.slice(cur, cur + size)});
+          cur += size;
+        }
+        return fileChunkList;
+      },
+      // 上传切片
+      async uploadChunks() {
+        const requestList = this.data
+          .map(({chunk, hash}) => {
+            // 新建一个表单对象
+            const formData = new FormData();
+            // 键值对存值
+            formData.append('chunk', chunk); // 片段数据
+            formData.append('hash', hash); // hash文件名
+            formData.append('filename', this.container.file.name); // 原理文件名
+            return {formData};
+          })
+          .map(async ({formData}) => this.request({
+              // 上传
+              url: 'http://localhost:3001/upload',
+              data: formData
+            })
+          );
+        // 并发请求
+        await Promise.all(requestList);
+        // 合并切片
+        await this.mergeRequset();
+      },
+      // 合并请求
+      async mergeRequset() {
+        await this.request({
+          url: 'http://localhost:3001/merge',
+          headers: {
+            'content-type': 'application/json'
+          },
+          data: JSON.stringify({
+            size: SIZE,
+            filename: this.container.file.name
+          })
+        })
+      },
+    }
+  });
+</script>
+</body>
+</html>
