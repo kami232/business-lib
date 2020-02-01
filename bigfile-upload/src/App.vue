@@ -1,33 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>大文件上传</title>
-  <!-- 引入样式 -->
-  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-</head>
-<body>
-<div id="app">
-  <div>
-    <input type="file" @change="handleFileChange"/>
-    <el-button @click="handleUpload">上传</el-button>
+<template>
+  <div id="app">
+    <div>
+      <input type="file" @change="handleFileChange"/>
+      <el-button @click="handleUpload">上传</el-button>
+    </div>
+    <div>{{uploadPercentage}}</div>
   </div>
-</div>
+</template>
 
-<script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
-<!-- 引入组件库 -->
-<script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script>
   // 每个切片的大小 10MB
   const SIZE = 10 * 1024 * 1024;
 
-  const vm = new Vue({
-    el: '#app',
-    data: {
-      container: {
-        file: null
-      },
-      data: []
+  export default {
+    name: 'app',
+    data() {
+      return {
+        container: {
+          file: null
+        },
+        data: []
+      }
     },
     methods: {
       // 请求方法
@@ -36,11 +29,13 @@
                 method = "post",
                 data,
                 headers = {},
-                requestList
+                onProgress = e => e
               }) {
         return new Promise(resolve => {
           const xhr = new XMLHttpRequest();
           xhr.open(method, url);
+          // 上传进度监听
+          xhr.upload.onprogress = onProgress;
           Object.keys(headers).forEach(key =>
             xhr.setRequestHeader(key, headers[key])
           );
@@ -68,7 +63,9 @@
         // 修改记录切片的数据，并保持到data
         this.data = fileChunkList.map(({file}, index) => ({
           chunk: file,
-          hash: this.container.file.name + '-' + index // 文件名 + 数组下标
+          index,
+          hash: this.container.file.name + '-' + index, // 文件名 + 数组下标
+          percentage: 0 // 记录当前chunk上传进度
         }));
         await this.uploadChunks();
       },
@@ -86,25 +83,38 @@
       // 上传切片
       async uploadChunks() {
         const requestList = this.data
-          .map(({chunk, hash}) => {
+          .map(({chunk, hash, index}) => {
             // 新建一个表单对象
             const formData = new FormData();
             // 键值对存值
             formData.append('chunk', chunk); // 片段数据
             formData.append('hash', hash); // hash文件名
             formData.append('filename', this.container.file.name); // 原理文件名
-            return {formData};
+            return {formData, index};
           })
-          .map(async ({formData}) => this.request({
+          .map(async ({formData, index}) => this.request({
               // 上传
               url: 'http://localhost:3001/upload',
-              data: formData
+              data: formData,
+              onProgress: this.createProgressHandler(this.data[index]),
             })
           );
         // 并发请求
         await Promise.all(requestList);
         // 合并切片
         await this.mergeRequset();
+      },
+      /**
+       * 处理上传监听函数
+       * @param item 对应的chunk
+       * @returns {function(...[*]=)}
+       */
+      createProgressHandler(item) {
+        return e => {
+          // e.loaded 返回已上传大小 e.total 返回文件大小
+          // 保存当前chunk上传进度
+          item.percentage = parseInt(String(e.loaded / e.total) * 100);
+        }
       },
       // 合并请求
       async mergeRequset() {
@@ -119,8 +129,20 @@
           })
         })
       },
+    },
+    computed: {
+      // 统计总上传进度
+      uploadPercentage() {
+        if (!this.container.file || !this.data.length) return;
+        const loaded = this.data
+          .map(item => item.chunk.size * item.percentage) // 返回每个切片当前上传进度百分比
+          .reduce((acc, cur) => acc + cur); // 计算现上传总size
+        return parseInt((loaded / this.container.file.size).toFixed(2)); // 总百分比
+      }
     }
-  });
+  }
 </script>
-</body>
-</html>
+
+<style>
+
+</style>
