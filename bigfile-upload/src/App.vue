@@ -4,7 +4,39 @@
       <input type="file" @change="handleFileChange"/>
       <el-button @click="handleUpload">上传</el-button>
     </div>
-    <div>{{uploadPercentage}}</div>
+    <div class="process-box">
+      <div @click="showChunk = !showChunk">
+        <el-progress :text-inside="true"
+                     :stroke-width="22"
+                     :percentage="uploadPercentage"></el-progress>
+      </div>
+
+      <el-table
+          :data="data"
+          stripe
+          style="width: 100%"
+          v-show="showChunk">
+        <el-table-column
+            prop="hash"
+            label="切片hash"
+            width="300"
+            align="center">
+        </el-table-column>
+        <el-table-column
+            prop="chunk.size"
+            label="大小(KB)"
+            width="300"
+            align="center">
+        </el-table-column>
+        <el-table-column
+            label="进度"
+            align="center">
+          <template slot-scope="scope">
+            <el-progress :percentage="scope.row.percentage"></el-progress>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
   </div>
 </template>
 
@@ -19,7 +51,8 @@
         container: {
           file: null
         },
-        data: []
+        data: [],
+        showChunk: false, // 是否显示切片详情
       }
     },
     methods: {
@@ -60,11 +93,14 @@
         if (!this.container.file) return;
         // 生成切片数组
         const fileChunkList = this.createFileChunk(this.container.file);
+        // 开子线程去求文件hash
+        this.container.hash = await this.calculateHash(fileChunkList);
         // 修改记录切片的数据，并保持到data
         this.data = fileChunkList.map(({file}, index) => ({
+          fileHash: this.container.hash,
           chunk: file,
           index,
-          hash: this.container.file.name + '-' + index, // 文件名 + 数组下标
+          hash: this.container.hash + '-' + index, // 文件名 + 数组下标
           percentage: 0 // 记录当前chunk上传进度
         }));
         await this.uploadChunks();
@@ -83,13 +119,14 @@
       // 上传切片
       async uploadChunks() {
         const requestList = this.data
-          .map(({chunk, hash, index}) => {
+          .map(({chunk, hash, fileHash, index}) => {
             // 新建一个表单对象
             const formData = new FormData();
             // 键值对存值
             formData.append('chunk', chunk); // 片段数据
             formData.append('hash', hash); // hash文件名
-            formData.append('filename', this.container.file.name); // 原理文件名
+            formData.append('filehash', fileHash); // 源文件hash文件名
+            // formData.append('filename', this.container.file.name); // 原理文件名
             return {formData, index};
           })
           .map(async ({formData, index}) => this.request({
@@ -125,15 +162,39 @@
           },
           data: JSON.stringify({
             size: SIZE,
-            filename: this.container.file.name
+            filename: this.container.file.name,
+            filehash: this.container.hash
           })
         })
       },
+      /**
+       * 生成文件hash（web-worker）
+       * @param fileChunkList chunk数据数组
+       */
+      calculateHash(fileChunkList) {
+        return new Promise(resolve => {
+          // 创建子线程
+          // console.log();
+          this.container.worker = new Worker('/hash.js');
+          // 向子线程发信息
+          this.container.worker.postMessage({fileChunkList});
+          // 监听子线程信息
+          this.container.worker.onmessage = e => {
+            const {percentage, hash} = e.data;
+            // 当前hash进度
+            this.hashPercentage = percentage;
+            // 只有完成才返回hash
+            if (hash) {
+              resolve(hash);
+            }
+          }
+        });
+      }
     },
     computed: {
       // 统计总上传进度
       uploadPercentage() {
-        if (!this.container.file || !this.data.length) return;
+        if (!this.container.file || !this.data.length) return 0;
         const loaded = this.data
           .map(item => item.chunk.size * item.percentage) // 返回每个切片当前上传进度百分比
           .reduce((acc, cur) => acc + cur); // 计算现上传总size
@@ -143,6 +204,8 @@
   }
 </script>
 
-<style>
-
+<style lang="css">
+  .process-box {
+    margin-top: 10px;
+  }
 </style>

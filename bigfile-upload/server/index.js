@@ -42,7 +42,7 @@ const pipeStream = (path, writeStream) =>
 
 /**
  * 合并文件
- * @param filePath 文件目录绝对路径
+ * @param filePath 缓存文件目录绝对路径
  * @param filename 文件名
  * @param size 大小
  * @returns {Promise<void>}
@@ -90,9 +90,10 @@ server.on("request", async (req, res) => {
       }
       const [chunk] = files.chunk; // 片段数据
       const [hash] = fields.hash; // hash文件名
-      const [filename] = fields.filename; // 原来的文件名
+      const [filehash] = fields.filehash; //源文件hash
+      // const [filename] = fields.filename; // 原来的文件名
       // 返回缓存该文件的绝对路径
-      const chunkDir = path.resolve(CACHE_DIR, filename);
+      const chunkDir = path.resolve(CACHE_DIR, filehash);
 
       // 切片目录不存在，创建切片目录
       if (!fse.existsSync(chunkDir)) {
@@ -107,9 +108,9 @@ server.on("request", async (req, res) => {
     });
   } else if (req.url === '/merge') {
     const data = await resolvePost(req);
-    const {filename, size} = data;
-    // 需要合并的文件目录
-    const filePath = path.resolve(CACHE_DIR, `${filename}`);
+    const {filename, size, filehash} = data;
+    // 需要合并的文件目录, 即缓存目录
+    const filePath = path.resolve(CACHE_DIR, `${filehash}`);
     await mergeFileChunk(filePath, filename, size);
     res.end(JSON.stringify({code: 200, message: "成功"}));
   }
