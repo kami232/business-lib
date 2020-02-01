@@ -1,5 +1,10 @@
 self.importScripts('/spark-md5.min.js');
 
+/*
+因为只要文件修改了名字，则上传的缓存则失效，所以这种命名是错误的，我们要根据内容生成hash，只要hash不变则命名的缓存则就不会变。
+因为有可能是大文件上传，所有采用web-worker 在 worker 线程计算 hash，则不会阻塞UI交互
+ */
+
 // 注意：spark-md5 需要根据所有切片才能算出一个 hash 值，不能直接将整个文件放入计算，否则即使不同文件也会有相同的 hash。
 // 监听主线程发来的信息
 self.onmessage = e => {
