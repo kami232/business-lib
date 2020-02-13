@@ -1,9 +1,9 @@
 let uid = 0;
 
 /**
- * 观察对象所有属性
+ * 观察对象所有属性, 类vue的data
  * @param value 值
- * @param vm
+ * @param 当前实例对象，类似vue对象
  */
 function observe(value, vm) {
   // 判断是否有值或是否是对象
@@ -19,6 +19,7 @@ class Observer {
   constructor(data) {
     // 监听的数据
     this.data = data;
+    // 第一步，遍历所有数据
     this.walk(data);
   }
 
@@ -27,10 +28,10 @@ class Observer {
    * @param data 监听的数据
    */
   walk(data) {
-    const me = this;
+    const self = this;
     // 遍历数据所有可枚举的属性
     Object.keys(data).forEach(key => {
-      me.convert(key, data[key]);
+      self.convert(key, data[key]);
     });
   }
 
@@ -58,7 +59,7 @@ class Observer {
       enumerable: true, // 当且仅当该属性的 configurable 为 true 时，该属性描述符才能够被改变，同时该属性也能从对应的对象上被删除。默认为 false。
       configurable: false, // 当且仅当该属性的enumerable为true时，该属性才能够出现在对象的枚举属性中。默认为 false。
       get() {
-        // 判断是否有Dep.target值，没有则执行depend方法
+        // 判断是否有Dep.target值（是否已经添加了该订阅者），有则执行depend方法
         Dep.target && dep.depend();
         return val;
       },
