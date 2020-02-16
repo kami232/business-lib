@@ -74,6 +74,7 @@ class MyPromise {
 
     // 如果then方法没有实例方法内部快，则直接进行此方法
     if (self.state === RESOLVED) {
+      // 返回新的promise
       return (promise2 = new MyPromise((resolve, reject) => {
         setTimeout(() => {
           try {
