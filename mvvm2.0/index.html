@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<div id="app">
+  <h1>{{ title }}</h1>
+  <h2>{{ name }}</h2>
+</div>
+
+<script src="observer.js"></script>
+<script src="compile.js"></script>
+<script src="watcher.js"></script>
+<script src="index.js"></script>
+<script>
+  const selfVue = new SelfVue({
+    el: '#app',
+    data: {
+      title: 'hello world',
+      name: ''
+    }
+  });
+
+  window.setTimeout(function () {
+    selfVue.title = '你好 世界';
+  }, 2000);
+
+  window.setTimeout(function () {
+    selfVue.name = 'kim';
+  }, 2500);
+</script>
+</body>
+</html>
