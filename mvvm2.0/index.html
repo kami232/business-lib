@@ -7,7 +7,9 @@
 <body>
 <div id="app">
   <h1>{{ title }}</h1>
-  <h2>{{ name }}</h2>
+  <input v-model="name">
+  <p>{{ name }}</p>
+  <button v-on:click="clickMe">click</button>
 </div>
 
 <script src="observer.js"></script>
@@ -20,16 +22,13 @@
     data: {
       title: 'hello world',
       name: ''
+    },
+    methods: {
+      clickMe: function() {
+        this.title = '你好 世界';
+      }
     }
   });
-
-  window.setTimeout(function () {
-    selfVue.title = '你好 世界';
-  }, 2000);
-
-  window.setTimeout(function () {
-    selfVue.name = 'kim';
-  }, 2500);
 </script>
 </body>
 </html>
