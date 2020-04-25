@@ -15,7 +15,7 @@ class Compile {
     if (this.el) {
       this.fragment = this.nodeToFragment(this.el); // 返回虚拟节点集
       this.compileElement(this.fragment); // 解析模板
-      this.el.appendChild(this.fragment);
+      this.el.appendChild(this.fragment); // 添加节点
     } else {
       console.log('DOM不存在')
     }
@@ -38,15 +38,15 @@ class Compile {
   }
 
   // 解析模板
-  compileElement() {
-    let childNodes = this.el.childNodes;
+  compileElement(el) {
+    let childNodes = el.childNodes;
     [].slice.call(childNodes).forEach(node => {
       const Reg = /\{\{(.*)\}\}/;
       const text = node.textContent;
 
       // 判断是否是文本节点，并且是符合{{}}规则
       if (this.isTextNode(node) && Reg.test(text)) {
-        this.compileText(node, Reg.exec(text)[1]);
+        this.compileText(node, Reg.exec(text)[1].trim());
       }
 
       // 判断是否还有子节点
