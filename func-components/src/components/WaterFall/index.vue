@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-21 16:19:47
  * @LastEditors: kim
- * @LastEditTime: 2020-12-21 17:08:12
+ * @LastEditTime: 2020-12-21 23:20:21
  * @Description: 瀑布流
 -->
 <template>
@@ -11,10 +11,10 @@
       <img
         class="img-box"
         :style="{
-          height: `${imgHeights[index]}px`,
+          height: `${data.imgHeights[index]}px`,
           marginBottom: `${vSpace}px`,
         }"
-        v-for="index in leftImgIndexes"
+        v-for="index in data.leftImgIndexes"
         :src="imgUrl[index]"
         :key="index"
         alt=""
@@ -24,10 +24,10 @@
       <img
         class="img-box"
         :style="{
-          height: `${imgHeights[index]}px`,
+          height: `${data.imgHeights[index]}px`,
           marginBottom: `${vSpace}px`,
         }"
-        v-for="index in rightImgIndexes"
+        v-for="index in data.rightImgIndexes"
         :src="imgUrl[index]"
         :key="index"
         alt=""
@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, toRaw } from 'vue'
 export default {
   props: {
     imgUrl: {
@@ -72,9 +72,11 @@ export default {
    setup(props) {
     const wrap = ref(null)
     let imgWidth = ref(0) // 图片宽度
-    let leftImgIndexes = reactive([])
-    let rightImgIndexes = reactive([])
-    let imgHeights = reactive([])
+    const data = reactive({
+      leftImgIndexes: [],
+      rightImgIndexes: [],
+      imgHeights: []
+    })
 
     /**
      * 计算所有图片缩放的高度
@@ -179,17 +181,15 @@ export default {
       const wrapWidth = wrap.value.clientWidth
       imgWidth.value = Math.floor((wrapWidth - props.hSpace) / 2)
 
-      imgHeights = await loadImgHeights(props.imgUrl)
-      leftImgIndexes = dpHalf(imgHeights).indexes
-      rightImgIndexes = omitByIndexes(props.imgUrl, leftImgIndexes)
+      data.imgHeights = await loadImgHeights(props.imgUrl)
+      data.leftImgIndexes = dpHalf(toRaw(data.imgHeights)).indexes
+      data.rightImgIndexes = omitByIndexes(props.imgUrl, toRaw(data.leftImgIndexes))
     })
 
     return {
       wrap,
-      imgHeights,
-      leftImgIndexes,
-      rightImgIndexes,
-      imgWidth
+      imgWidth,
+      data
     }
   },
 }
