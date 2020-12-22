@@ -1,15 +1,18 @@
 <template>
-  <div class="waterfall-wrap">
+  <!-- <div class="waterfall-wrap">
     <WaterFall :hSpace="10" />
-  </div>
+  </div> -->
+  <drag-sort />
 </template>
 
 <script>
-import WaterFall from './components/WaterFall/index.vue'
+// import WaterFall from './components/WaterFall/index.vue'
+import DragSort from './components/DragSort/index.vue'
 export default {
   name: 'App',
   components: {
-    WaterFall,
+    // WaterFall,
+    DragSort,
   },
 }
 </script>
