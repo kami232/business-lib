@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-22 10:07:14
  * @LastEditors: kim
- * @LastEditTime: 2020-12-22 23:08:36
+ * @LastEditTime: 2020-12-24 17:40:07
  * @Description: 拖拽排序图片
 -->
 <template>
@@ -41,7 +41,6 @@ import {
   toRef,
   computed,
   onUnmounted,
-  onBeforeUpdate,
   toRaw,
 } from 'vue'
 export default {
@@ -82,24 +81,6 @@ export default {
           name: 'five',
           imgUrl:
             'https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=3771115016,2161480362&fm=26&gp=0.jpg',
-        },
-        {
-          id: 6,
-          name: 'six',
-          imgUrl:
-            'https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=4114134162,77980848&fm=26&gp=0.jpg',
-        },
-        {
-          id: 7,
-          name: 'serven',
-          imgUrl:
-            'https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=1802117205,3257504260&fm=26&gp=0.jpg',
-        },
-        {
-          id: 8,
-          name: 'eight',
-          imgUrl:
-            'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=64262062,3191826457&fm=11&gp=0.jpg',
         },
       ],
     },
@@ -155,25 +136,17 @@ export default {
     /**
      * @description: 从from插入到to位置，返回改变后的数组
      * @param {Array} list 数组
-     * @param {Object} from 改变数据的对象
-     * @param {Object} to 目标对象
-     * @return {Object} {list: 数组, isChange: 是否改变}
+     * @param {Object} fromData 拖拽对象数据
+     * @param {number} from 移动前的index
+     * @param {number} to 目标index
+     * @return {Array}
      */
-    const insertBefore = (list, from, to) => {
+    const insertBefore = (list, fromData, from, to) => {
+      if (from === to) return list
       const newList = [...list]
-      // 初始位置和目标位置没有发生改变时
-      if (from === to) return { list: newList, isChange: false }
-      const fromIndex = newList.indexOf(from)
-
-      newList.splice(fromIndex, 1)
-      const toIndex = to ? newList.indexOf(to) : -1
-      if (to && toIndex >= 0) {
-        newList.splice(toIndex, 0, from)
-      } else {
-        newList.push(from)
-      }
-
-      return { list: newList, isChange: true }
+      newList.splice(from, 1)
+      newList.splice(to, 0, fromData)
+      return newList
     }
 
     /**
@@ -204,21 +177,21 @@ export default {
       const col = Math.floor(offsetX / imgSize.value) // 列
       const row = Math.floor(offsetY / imgSize.value) // 行
       let currentIndex = row * column.value + col // 目标位置后一个index
+      currentIndex =
+        currentIndex > state.dragList.length - 1
+          ? state.dragList.length - 1
+          : currentIndex
+
       const fromIndex = state.dragList.indexOf(dragItemData) // 拖拽元素的index
 
-      if (fromIndex < currentIndex) {
-        currentIndex++
-      }
-
-      const currentItem = toRaw(state.dragList[currentIndex]) // 这里之所以使用 toRaw 是因为想把insertBefore 独立出来，通过返回新数组方式，如果不返回可以不转，直接使用响应式
-
-      const { list, isChange } = insertBefore(
+      const newList = insertBefore(
         toRaw(state.dragList),
         dragItemData,
-        currentItem
-      )
+        fromIndex,
+        currentIndex
+      ) // 重新排序后的数组
 
-      isChange && (state.dragList = list)
+      state.dragList = newList
     }
 
     // 拖动开始
