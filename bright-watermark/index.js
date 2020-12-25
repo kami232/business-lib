@@ -2,17 +2,17 @@
  * @Author: kim
  * @Date: 2020-12-24 23:12:15
  * @LastEditors: kim
- * @LastEditTime: 2020-12-25 00:09:20
+ * @LastEditTime: 2020-12-25 09:53:47
  * @Description: 生成明水印
  */
 const defaultConfig = {
-  container: '', // 水印容器
+  container: '', // 水印容器 默认加入到body
   draw: 'auto', // 绘制 auto自动 none不自动添加，则返回数据流图片，和提供监听dom方法
   renderer: 'canvas', // 绘制方法 canvas or svg
   opacity: 0.2, // 透明度
   color: '#000', // 字体颜色
   text: '', // 水印文本
-  canDel: false, // 是否可以删除
+  canDel: false, // 是否可以删除, draw为 auto时生效
 }
 
 // 绘制方法

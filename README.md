@@ -8,6 +8,8 @@
 |     文件夹     |        描述         |
 | :------------: | :-----------------: |
 | bigfile-upload |   大文件分片上传    |
+| bright-watermark | 明水印 |
+| blind-watermark | 盲水印 |
 |      mvvm      |   响应式原理实现    |
 |    mvvm2.0     | 响应式原理（proxy） |
 |   my-router    |     vue路由显示     |
