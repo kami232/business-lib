@@ -23,7 +23,7 @@
       </div>
       <div class="ivideo-control-bottom">
         <div class="ivideo-control-b-left">
-          <div class="ivideo-control-btn">
+          <div class="ivideo-control-btn" @click="handlePlayAndPause">
             <span class="ivideo-control-svg">
               <!-- 播放和暂停 -->
               <svg
@@ -34,12 +34,12 @@
                 height="20"
                 fill="#fff"
               >
-                <g>
+                <g v-if="isPaused">
                   <path
                     d="M852.727563 392.447107C956.997809 458.473635 956.941389 565.559517 852.727563 631.55032L281.888889 993.019655C177.618644 1059.046186 93.090909 1016.054114 93.090909 897.137364L93.090909 126.860063C93.090909 7.879206 177.675064-35.013033 281.888889 30.977769L852.727563 392.447107 852.727563 392.447107Z"
                   ></path>
                 </g>
-                <g v-if="false">
+                <g v-else>
                   <path
                     d="M309.3 130.7h-70.9c-24.3 0-44 19.7-44 44v674.5c0 24.3 19.7 44 44 44h70.9c24.3 0 44-19.7 44-44V174.7c0-24.3-19.7-44-44-44z m476.3 0h-70.9c-24.3 0-44 19.7-44 44v674.5c0 24.3 19.7 44 44 44h70.9c24.3 0 44-19.7 44-44V174.7c0-24.3-19.7-44-44-44z"
                   ></path>
@@ -48,7 +48,9 @@
             </span>
           </div>
 
-          <div class="ivideo-control-duration">00:00 / 11:00</div>
+          <div class="ivideo-control-duration">
+            00:00 / {{ filterDuration(duration) }}
+          </div>
         </div>
 
         <div class="ivideo-control-b-right">
@@ -60,7 +62,7 @@
             <button class="ivideo-control-speed-name">1.0 x</button>
           </div>
 
-          <div class="ivideo-control-btn">
+          <div class="ivideo-control-btn" @click="handleMuted">
             <span class="ivideo-control-svg">
               <!-- 音量 -->
               <svg
@@ -71,7 +73,7 @@
                 height="20"
                 fill="#fff"
               >
-                <g>
+                <g v-if="!isMuted">
                   <path
                     d="M779.946667 357.12a42.666667 42.666667 0 1 0-66.56 53.76 170.666667 170.666667 0 0 1 0 202.24A42.666667 42.666667 0 0 0 746.666667 682.666667a42.666667 42.666667 0 0 0 33.28-15.786667 256 256 0 0 0 0-309.76z"
                   ></path>
@@ -80,7 +82,7 @@
                   ></path>
                 </g>
 
-                <g v-if="false">
+                <g v-else>
                   <path
                     d="M721.493333 600.746667l61.44 61.44a256 256 0 0 0-2.986666-305.066667 42.666667 42.666667 0 1 0-66.56 53.76 170.666667 170.666667 0 0 1 8.106666 189.866667z"
                   ></path>
@@ -123,8 +125,8 @@
 </template>
 
 <script>
-import { onMounted, reactive, ref } from 'vue'
-import { defaultConfig, cssHelper } from './ivideo.js'
+import { onBeforeUnmount, onMounted, reactive, ref, toRefs } from 'vue'
+import { defaultConfig, cssHelper, filterDuration } from './ivideo.js'
 
 export default {
   props: {
@@ -134,9 +136,14 @@ export default {
     },
   },
   setup(props) {
-    const videoWrapRef = ref(null)
-    const videoRef = ref(null)
-    const dotVisiable = ref(false)
+    const videoWrapRef = ref(null) // 父容器引用
+    const videoRef = ref(null) // video 引用
+    const dotVisiable = ref(false) // 进度条拖拽点显隐
+    const state = reactive({
+      duration: 0, //视频时长
+      isPaused: true, // 是否处于暂停
+      isMuted: false, // 是否静音
+    })
 
     // 合并配置
     const config = reactive(Object.assign({}, defaultConfig, props.options))
@@ -158,6 +165,15 @@ export default {
       }
 
       cssHelper(videoWrapRef.value, styleObj)
+
+      // 自动播放
+      videoRef.value.autoplay = config.autoplay
+      config.autoplay && (state.isPaused = false)
+      // 静音
+      videoRef.value.muted = config.muted
+      config.muted && (state.isMuted = true)
+      videoRef.value.loop = config.loop
+      videoRef.value.preload = config.preload
     }
 
     /**
@@ -166,7 +182,6 @@ export default {
      * @return {*}
      */
     const handleFocusProgress = () => {
-      console.log('111111')
       dotVisiable.value = true
     }
 
@@ -179,17 +194,54 @@ export default {
       dotVisiable.value = false
     }
 
+    /**
+     * @description: 处理播放和暂停
+     */
+    const handlePlayAndPause = () => {
+      const isPaused = videoRef.value.paused
+      if (isPaused) {
+        videoRef.value.play()
+      } else {
+        videoRef.value.pause()
+      }
+      state.isPaused = !isPaused
+      config.playCallback && config.playCallback(!isPaused)
+    }
+
+    const handleMuted = () => {
+      const isMuted = videoRef.value.muted
+
+      videoRef.value.muted = !isMuted
+      state.isMuted = !isMuted
+      config.mutedCallback && config.mutedCallback(!isMuted)
+    }
+
+    /**
+     * @description: 监听视频可以播放回调
+     */
+    const _handleCanPlay = () => {
+      state.duration = videoRef.value.duration || 0
+    }
+
     onMounted(() => {
       _handleSetting()
+      videoRef.value.addEventListener('canplay', _handleCanPlay, false)
+    })
+
+    onBeforeUnmount(() => {
+      videoRef.value.removeEventListener('canplay', _handleCanPlay)
     })
 
     return {
+      ...toRefs(state),
       videoWrapRef,
       videoRef,
       dotVisiable,
       handleFocusProgress,
       handleBlurProgress,
-      config,
+      handlePlayAndPause,
+      handleMuted,
+      filterDuration,
     }
   },
 }
@@ -214,7 +266,12 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.1);
+  // background-color: rgba(0, 0, 0, 0.1);
+  background-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5),
+    rgba(255, 255, 255, 0)
+  );
 
   .ivideo-control-top {
     overflow: hidden;
