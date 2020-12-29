@@ -61,15 +61,22 @@
           </div>
 
           <div class="ivideo-control-b-right">
-            <div class="ivideo-control-btn ivideo-control-btn-quality">
+            <!-- <div class="ivideo-control-btn ivideo-control-btn-quality">
               <button class="ivideo-control-quality-name">1080p</button>
-            </div>
+            </div> -->
 
             <div class="ivideo-control-btn ivideo-control-btn-speed">
               <button class="ivideo-control-speed-name">1.0 x</button>
+
+              <!-- <ul class="speed-list">
+                <li class="speed-item">2.0x</li>
+                <li class="speed-item">1.5x</li>
+                <li class="speed-item">1.0x</li>
+                <li class="speed-item active">0.5x</li>
+              </ul> -->
             </div>
 
-            <div class="ivideo-control-btn" @click="handleMuted">
+            <div class="ivideo-control-btn ivideo-control-btn-volume" @click="handleMuted">
               <span class="ivideo-control-svg">
                 <!-- 音量 -->
                 <svg
@@ -99,6 +106,16 @@
                   </g>
                 </svg>
               </span>
+
+              <div class="volume-control">
+                <div class="volume-num">100</div>
+                <div class="volume-bar-wrap">
+                  <div class="volume-bar">
+                    <div class="volume-progress"></div>
+                  </div>
+                  <div class="volume-dot"></div>
+                </div>
+              </div>
             </div>
 
             <div class="ivideo-control-btn" @click="handleFullScreen">
