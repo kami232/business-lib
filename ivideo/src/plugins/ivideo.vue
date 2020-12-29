@@ -6,7 +6,7 @@
         type="video/mp4"
       />
     </video>
-    <div class="ivideo-control-wrap">
+    <div class="ivideo-control-wrap" v-show="showControl">
       <div class="ivideo-control-top">
         <div
           class="ivideo-progress-bar"
@@ -94,7 +94,7 @@
             </span>
           </div>
 
-          <div class="ivideo-control-btn">
+          <div class="ivideo-control-btn" @click="handleFullScreen">
             <span class="ivideo-control-svg">
               <!-- 全屏 -->
               <svg
@@ -105,12 +105,12 @@
                 height="20"
                 fill="#fff"
               >
-                <g>
+                <g v-if="!isFullScreen">
                   <path
                     d="M146.070588 12.890353c-66.258824 0-126.494118 55.958588-126.494117 124.988235v124.988236c0 27.587765 24.094118 49.995294 54.211764 49.995294 24.094118 0 48.188235-22.407529 48.188236-49.995294V137.878588c0-13.793882 12.047059-24.997647 24.094117-24.997647h126.494118c24.094118 0 48.188235-22.407529 48.188235-49.995294 0-27.648-24.094118-49.995294-48.188235-49.995294h-126.494118z m752.941177 0c66.258824 0 120.470588 55.958588 120.470588 124.988235v124.988236c0 27.587765-18.070588 49.995294-48.188235 49.995294s-48.188235-22.407529-48.188236-49.995294V137.878588c0-13.793882-12.047059-24.997647-24.094117-24.997647h-126.494118c-30.117647 0-54.211765-22.407529-54.211765-49.995294 0-27.648 24.094118-49.995294 54.211765-49.995294h126.494118zM19.576471 887.808c0 69.029647 60.235294 124.988235 126.494117 124.988235h126.494118c24.094118 0 48.188235-22.347294 48.188235-49.995294 0-27.587765-24.094118-49.995294-48.188235-49.995294h-126.494118c-12.047059 0-24.094118-11.203765-24.094117-24.997647v-124.988235c0-27.587765-24.094118-49.995294-48.188236-49.995294-30.117647 0-54.211765 22.407529-54.211764 49.995294v124.988235z m879.435294 124.988235c66.258824 0 120.470588-55.958588 120.470588-124.988235v-124.988235c0-27.587765-18.070588-49.995294-48.188235-49.995294s-48.188235 22.407529-48.188236 49.995294v124.988235c0 13.793882-12.047059 24.997647-24.094117 24.997647h-126.494118c-30.117647 0-54.211765 22.407529-54.211765 49.995294 0 27.648 24.094118 49.995294 54.211765 49.995294h126.494118z"
                   ></path>
                 </g>
-                <g v-if="false">
+                <g v-else>
                   <path
                     d="M200.282353 312.862118c66.258824 0 120.470588-55.958588 120.470588-124.988236V62.885647c0-27.648-18.070588-49.995294-48.188235-49.995294-24.094118 0-48.188235 22.347294-48.188235 49.995294v124.988235c0 13.793882-12.047059 24.997647-24.094118 24.997647h-126.494118c-30.117647 0-48.188235 22.347294-48.188235 49.995295 0 27.587765 18.070588 49.995294 48.188235 49.995294h126.494118z m650.541176 0c-72.282353 0-126.494118-55.958588-126.494117-124.988236V62.885647c0-27.648 24.094118-49.995294 48.188235-49.995294 30.117647 0 48.188235 22.347294 48.188235 49.995294v124.988235c0 13.793882 12.047059 24.997647 30.117647 24.997647h120.470589c30.117647 0 54.211765 22.347294 54.211764 49.995295 0 27.587765-24.094118 49.995294-54.211764 49.995294h-120.470589z m-530.070588 524.950588c0-69.029647-54.211765-124.988235-120.470588-124.988235h-126.494118c-30.117647 0-48.188235 22.407529-48.188235 49.995294 0 27.648 18.070588 49.995294 48.188235 49.995294h126.494118c12.047059 0 24.094118 11.203765 24.094118 24.997647v124.988235c0 27.648 24.094118 49.995294 48.188235 49.995294 30.117647 0 48.188235-22.347294 48.188235-49.995294v-124.988235z m530.070588-124.988235c-72.282353 0-126.494118 55.958588-126.494117 124.988235v124.988235c0 27.648 24.094118 49.995294 48.188235 49.995294 30.117647 0 48.188235-22.347294 48.188235-49.995294v-124.988235c0-13.793882 12.047059-24.997647 30.117647-24.997647h120.470589c30.117647 0 54.211765-22.347294 54.211764-49.995294 0-27.587765-24.094118-49.995294-54.211764-49.995294h-120.470589z"
                   ></path>
@@ -126,7 +126,14 @@
 
 <script>
 import { onBeforeUnmount, onMounted, reactive, ref, toRefs } from 'vue'
-import { defaultConfig, cssHelper, filterDuration } from './ivideo.js'
+import {
+  defaultConfig,
+  cssHelper,
+  filterDuration,
+  toFullVideo,
+  exitFullscreen,
+  isNodeContain,
+} from './ivideo.js'
 
 export default {
   props: {
@@ -143,6 +150,8 @@ export default {
       duration: 0, //视频时长
       isPaused: true, // 是否处于暂停
       isMuted: false, // 是否静音
+      isFullScreen: false, // 是否处于全屏状态
+      showControl: true, // 控制台是否显示
     })
 
     // 合并配置
@@ -174,6 +183,7 @@ export default {
       config.muted && (state.isMuted = true)
       videoRef.value.loop = config.loop
       videoRef.value.preload = config.preload
+      videoRef.value.controls = false
     }
 
     /**
@@ -181,7 +191,14 @@ export default {
      * @param {*}
      * @return {*}
      */
-    const handleFocusProgress = () => {
+    const handleFocusProgress = (e) => {
+      const progressWrap = videoWrapRef.value.querySelector(
+        '.ivideo-progress-bar'
+      )
+      if (isNodeContain(progressWrap, e.relatedTarget)) return
+      cssHelper(progressWrap, {
+        transform: 'scale(1.01)',
+      })
       dotVisiable.value = true
     }
 
@@ -190,7 +207,14 @@ export default {
      * @param {*}
      * @return {*}
      */
-    const handleBlurProgress = () => {
+    const handleBlurProgress = (e) => {
+      const progressWrap = videoWrapRef.value.querySelector(
+        '.ivideo-progress-bar'
+      )
+      if (isNodeContain(progressWrap, e.relatedTarget)) return
+      cssHelper(progressWrap, {
+        transform: 'scale(1)',
+      })
       dotVisiable.value = false
     }
 
@@ -208,6 +232,9 @@ export default {
       config.playCallback && config.playCallback(!isPaused)
     }
 
+    /**
+     * @description: 处理静音
+     */
     const handleMuted = () => {
       const isMuted = videoRef.value.muted
 
@@ -217,19 +244,49 @@ export default {
     }
 
     /**
+     * @description: 处理全屏和取消横屏
+     */
+    const handleFullScreen = () => {
+      if (state.isFullScreen) {
+        exitFullscreen()
+      } else {
+        toFullVideo(videoWrapRef.value)
+      }
+    }
+
+    /**
      * @description: 监听视频可以播放回调
      */
     const _handleCanPlay = () => {
       state.duration = videoRef.value.duration || 0
     }
 
+    /**
+     * @description: 监听全屏事件
+     */
+    const _handleScreen = () => {
+      state.isFullScreen =
+        document.fullscreenElement == videoWrapRef.value ? true : false
+    }
+
+    /**
+     * @description: 监听播放完成事件
+     */
+    const _handleEnded = () => {
+      state.isPaused = true
+    }
+
     onMounted(() => {
       _handleSetting()
+      videoWrapRef.value.addEventListener('fullscreenchange', _handleScreen)
       videoRef.value.addEventListener('canplay', _handleCanPlay, false)
+      videoRef.value.addEventListener('ended', _handleEnded)
     })
 
     onBeforeUnmount(() => {
+      videoWrapRef.value.removeEventListener('fullscreenchange', _handleScreen)
       videoRef.value.removeEventListener('canplay', _handleCanPlay)
+      videoRef.value.removeEventListener('ended', _handleEnded)
     })
 
     return {
@@ -240,6 +297,7 @@ export default {
       handleFocusProgress,
       handleBlurProgress,
       handlePlayAndPause,
+      handleFullScreen,
       handleMuted,
       filterDuration,
     }
@@ -259,6 +317,10 @@ export default {
   width: 100%;
   height: 100%;
   background-color: #000;
+
+  &::-webkit-media-controls {
+    display: none !important;
+  }
 }
 
 .ivideo-control-wrap {
@@ -277,6 +339,7 @@ export default {
     overflow: hidden;
     padding: 4px 10px;
     width: 100%;
+    transition: all 0.1s;
 
     .ivideo-progress-bar {
       position: relative;

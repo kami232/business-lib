@@ -1,5 +1,5 @@
 <template>
-  <ivideo :options="{autoFit: false}" />
+  <ivideo />
 </template>
 
 <script>
