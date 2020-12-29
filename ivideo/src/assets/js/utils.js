@@ -1,18 +1,4 @@
 /**
- * @description: 默认配置
- * 回调函数： playCallback: (status) => {} 暂停开始回调 false是播放中 true是暂停
- */
-export const defaultConfig = {
-  width: 512,
-  height: 288,
-  autoFit: false,
-  autoplay: false, // 如果为true,浏览器准备好时开始回放
-  muted: false, // 默认情况下将会消除任何音频
-  loop: false,
-  preload: 'metadata'
-}
-
-/**
  * @description: 设置css style
  * @param {*} el dom
  * @param {Object} cssObj css对象
