@@ -1,0 +1,144 @@
+@charset 'utf-8';
+
+.ivideo {
+  position: relative;
+  user-select: none;
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.5s;
+  }
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+}
+
+.ivideo-player {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+
+  &::-webkit-media-controls {
+    display: none !important;
+  }
+}
+
+.ivideo-control-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5),
+    rgba(255, 255, 255, 0)
+  );
+
+  .ivideo-control-top {
+    overflow: hidden;
+    padding: 4px 10px;
+    width: 100%;
+    transition: all 0.1s;
+
+    .ivideo-progress-bar {
+      position: relative;
+      height: 3px;
+      background-origin: content-box;
+      background-clip: content-box;
+      background-color: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+    }
+
+    .bar-buffer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      transform-origin: 0 0;
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .bar-progress {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 30%;
+      transform-origin: 0 0;
+      background-color: #7d72b6;
+
+      .bar-progress-dot {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translate(50%, -50%);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #7d72b6;
+      }
+    }
+  }
+
+  .ivideo-control-bottom {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px 10px;
+    font-size: 0;
+
+    .ivideo-control-b-left {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+
+      .ivideo-control-duration {
+        margin-left: 10px;
+        font-size: 12px;
+        color: #fff;
+      }
+    }
+
+    .ivideo-control-b-right {
+      display: flex;
+      flex-grow: 1;
+      justify-content: flex-end;
+      -webkit-box-pack: end;
+    }
+
+    .ivideo-control-btn {
+      flex-shrink: 0;
+      width: auto;
+      height: 22px;
+      font-size: 12px;
+      line-height: 22px;
+      color: #fff;
+      cursor: pointer;
+
+      &.ivideo-control-btn-speed,
+      &.ivideo-control-btn-quality {
+        padding: 0 10px;
+
+        .ivideo-control-speed-name,
+        .ivideo-control-quality-name {
+          width: 100%;
+          border: none;
+          color: inherit;
+          font-size: inherit;
+          line-height: inherit;
+          outline: none;
+          background: none;
+        }
+      }
+    }
+
+    .ivideo-control-svg {
+      display: inline-block;
+      padding: 0 8px;
+      height: 22px;
+    }
+  }
+}

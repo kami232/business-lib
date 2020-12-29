@@ -24,6 +24,12 @@ export const cssHelper = (el, cssObj) => {
   }
 }
 
+/**
+ * @description: 判断 childNode 是否是 parentNode 的后代节点
+ * @param {Element} parentNode 
+ * @param {Element} childNode
+ * @return {Boolean}
+ */
 export const isNodeContain = (parentNode, childNode) => {
   return parentNode.contains(childNode)
 }
