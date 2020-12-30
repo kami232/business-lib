@@ -137,10 +137,12 @@
       }
 
       &.ivideo-control-btn-speed {
-        .speed-list {
+        .speed-menu {
           overflow: hidden;
           position: absolute;
-          display: block;
+          display: flex;
+          flex-wrap: wrap;
+          flex-direction: column-reverse;
           left: 50%;
           bottom: calc(100% + 18px);
           transform: translateX(-50%);
@@ -151,7 +153,7 @@
           background-color: rgba(0, 0, 0, 0.5);
         }
 
-        .speed-item {
+        .speed-menu-item {
           padding: 4px 14px;
           color: #fff;
 

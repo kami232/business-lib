@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2020-12-29 17:08:05
+ * @LastEditTime: 2020-12-30 15:26:31
  * @Description: 自定义播放器逻辑文件
  */
 import {
@@ -22,38 +22,62 @@ export default function (props) {
   const videoWrapRef = ref(null) // 父容器引用
   const videoRef = ref(null) // video 引用
   const dotVisiable = ref(false) // 进度条拖拽点显隐
+  const speedMenuVisiable = ref(false) // 倍率选项显隐
   const state = reactive({
     duration: 0, //视频时长
     isPaused: true, // 是否处于暂停
     isMuted: false, // 是否静音
     isFullScreen: false, // 是否处于全屏状态
     showControl: true, // 控制台是否显示
+    speed: {}, // 当前的倍率
   })
   let controlTimer = null // 控制台timer
+  let speedTimer = null
 
   /**
    * @description: 默认配置
    * 回调函数： playCallback: (status) => {} 暂停开始回调 false是播放中 true是暂停
+   * endedCallback 视频播放完毕回调
    */
   const defaultConfig = {
     width: 512,
     height: 288,
-    autoFit: false,
+    autoFit: false, // 是否自适应，开启后width、height失效
     autoplay: false, // 如果为true,浏览器准备好时开始回放
     muted: false, // 默认情况下将会消除任何音频
-    loop: false,
-    preload: 'metadata'
+    loop: false, // 循环
+    preload: 'metadata',
+    speed: {
+      open: true,
+      options: [
+        {
+          label: '0.5x',
+          value: 0.5
+        },
+        {
+          label: '1.0x',
+          value: 1
+        },
+        {
+          label: '1.5x',
+          value: 1.5
+        },
+        {
+          label: '2.0x',
+          value: 2
+        }
+      ],
+      defaultValue: 1
+    }
   }
 
   // 合并配置
   const config = computed(() =>
-    Object.assign({}, defaultConfig, props.options)
+    Object.assign({}, defaultConfig, props)
   )
 
   /**
    * @description: 基础设置
-   * @param {*}
-   * @return {*}
    */
   const _handleSetting = () => {
     const styleObj = {
@@ -75,9 +99,19 @@ export default function (props) {
     // 静音
     videoRef.value.muted = config.value.muted
     config.value.muted && (state.isMuted = true)
+
     videoRef.value.loop = config.value.loop
     videoRef.value.preload = config.value.preload
     videoRef.value.controls = false
+
+    if(config.value.speed.options.length) {
+      const speed = config.value.speed.options.find(item => item.value === config.value.speed.defaultValue)
+      if(!speed) {
+        throw new Error('There are no defaultValue in the options')
+      }
+      state.speed = speed
+      videoRef.value.playbackRate = speed.value
+    }
   }
 
   /**
@@ -150,7 +184,7 @@ export default function (props) {
    * @description: 鼠标移动事件
    * @param {Object} e 事件参数
    */
-  const handleMousemoveVideo = (e) => {
+  const handleMousemoveVideo = e => {
     state.showControl = true
     clearTimeout(controlTimer)
     const parentNode = videoWrapRef.value.querySelector(
@@ -166,12 +200,49 @@ export default function (props) {
    * @description: 鼠标移出事件
    * @param {Object} e 事件参数
    */
-  const handleMouseoutVideo = (e) => {
+  const handleMouseoutVideo = e => {
     clearTimeout(controlTimer)
     if (isNodeContain(videoWrapRef.value, e.relatedTarget)) return
     controlTimer = setTimeout(() => {
       state.showControl = false
     }, 1000)
+  }
+
+  /**
+   * @description: 倍率移入
+   */
+  const handleHoverSpeed = () => {
+    clearTimeout(speedTimer)
+    speedMenuVisiable.value = true
+  }
+
+  /**
+   * @description: 倍率移出
+   */
+  const handleBlurSpeed = e => {
+    clearTimeout(speedTimer)
+    if (isNodeContain(e.target, e.relatedTarget)) return
+    speedTimer = setTimeout(() => {
+      speedMenuVisiable.value = false
+    }, 500)
+  }
+
+  /**
+   * @description: 倍率菜单点击
+   * @param {Object} e 事件对象
+   */
+  const handleClickSpeedMenu = e => {
+    if(state.speed.value == e.target.dataset.value) {
+      speedMenuVisiable.value = false
+      return
+    }
+    const speedValue = e.target.dataset.value
+    const speed = config.value.speed.options.find(item => item.value == speedValue)
+    if(!speed) return
+    state.speed = speed
+    // TODO 修改倍率
+    videoRef.value.playbackRate = speed.value
+    speedMenuVisiable.value = false
   }
 
   /**
@@ -194,6 +265,8 @@ export default function (props) {
    */
   const _handleEnded = () => {
     state.isPaused = true
+
+    config.value.endedCallback && config.value.endedCallback()
   }
 
   /**
@@ -217,9 +290,11 @@ export default function (props) {
 
   return {
     state,
+    config,
     videoWrapRef,
     videoRef,
     dotVisiable,
+    speedMenuVisiable,
     handleFocusProgress,
     handleBlurProgress,
     handlePlayAndPause,
@@ -227,6 +302,9 @@ export default function (props) {
     handleMuted,
     handleMousemoveVideo,
     handleMouseoutVideo,
+    handleHoverSpeed,
+    handleBlurSpeed,
+    handleClickSpeedMenu,
     initPlayer,
     destroyPlayer
   }

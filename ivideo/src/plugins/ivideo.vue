@@ -65,18 +65,34 @@
               <button class="ivideo-control-quality-name">1080p</button>
             </div> -->
 
-            <div class="ivideo-control-btn ivideo-control-btn-speed">
-              <button class="ivideo-control-speed-name">1.0 x</button>
+            <div
+              class="ivideo-control-btn ivideo-control-btn-speed"
+              v-if="config.speed.open"
+              @mouseover="handleHoverSpeed"
+              @mouseleave="handleBlurSpeed"
+            >
+              <button class="ivideo-control-speed-name">{{speed.label}}</button>
 
-              <!-- <ul class="speed-list">
-                <li class="speed-item">2.0x</li>
-                <li class="speed-item">1.5x</li>
-                <li class="speed-item">1.0x</li>
-                <li class="speed-item active">0.5x</li>
-              </ul> -->
+              <ul
+                class="speed-menu"
+                @click="handleClickSpeedMenu"
+                v-show="speedMenuVisiable && config.speed.options.length"
+              >
+                <li
+                  :class="['speed-menu-item', {'active': speed.value === item.value}]"
+                  :data-value="item.value"
+                  v-for="(item, index) in config.speed.options"
+                  :key="index"
+                >
+                  {{ item.label }}
+                </li>
+              </ul>
             </div>
 
-            <div class="ivideo-control-btn ivideo-control-btn-volume" @click="handleMuted">
+            <div
+              class="ivideo-control-btn ivideo-control-btn-volume"
+              @click="handleMuted"
+            >
               <span class="ivideo-control-svg">
                 <!-- 音量 -->
                 <svg
@@ -107,7 +123,7 @@
                 </svg>
               </span>
 
-              <div class="volume-control">
+              <!-- <div class="volume-control">
                 <div class="volume-num">100</div>
                 <div class="volume-bar-wrap">
                   <div class="volume-bar">
@@ -115,7 +131,25 @@
                   </div>
                   <div class="volume-dot"></div>
                 </div>
-              </div>
+              </div> -->
+            </div>
+
+            <div class="ivideo-control-btn ivideo-control-btn-picture">
+              <!-- 画中画 -->
+              <span class="ivideo-control-svg">
+                <svg
+                  viewBox="0 0 1024 1024"
+                  version="1.1"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="#fff"
+                >
+                  <path
+                    d="M896 128a42.666667 42.666667 0 0 1 42.666667 42.666667v298.666666h-85.333334V213.333333H170.666667v597.333334h256v85.333333H128a42.666667 42.666667 0 0 1-42.666667-42.666667V170.666667a42.666667 42.666667 0 0 1 42.666667-42.666667h768z m0 426.666667a42.666667 42.666667 0 0 1 42.666667 42.666666v256a42.666667 42.666667 0 0 1-42.666667 42.666667h-341.333333a42.666667 42.666667 0 0 1-42.666667-42.666667v-256a42.666667 42.666667 0 0 1 42.666667-42.666666h341.333333zM286.165333 268.501333l96 96L469.333333 277.333333V512H234.666667l87.168-87.168-96-96 60.330666-60.330667z"
+                  ></path>
+                </svg>
+              </span>
             </div>
 
             <div class="ivideo-control-btn" @click="handleFullScreen">
@@ -150,15 +184,8 @@
 </template>
 
 <script>
-import {
-  onBeforeUnmount,
-  onMounted,
-  toRef,
-  toRefs,
-} from 'vue'
-import {
-  filterDuration
-} from '@/assets/js/utils.js'
+import { onBeforeUnmount, onMounted, toRef, toRefs } from 'vue'
+import { filterDuration } from '@/assets/js/utils.js'
 import useIVideo from './ivideo.js'
 
 export default {
@@ -171,21 +198,9 @@ export default {
   setup(props) {
     const options = toRef(props, 'options')
 
-    const {
-      state,
-      videoWrapRef,
-      videoRef,
-      dotVisiable,
-      handleFocusProgress,
-      handleBlurProgress,
-      handlePlayAndPause,
-      handleFullScreen,
-      handleMuted,
-      handleMousemoveVideo,
-      handleMouseoutVideo,
-      initPlayer,
-      destroyPlayer,
-    } = useIVideo(options)
+    const { state, initPlayer, destroyPlayer, ...propsAndFn } = useIVideo(
+      options.value
+    )
 
     onMounted(() => {
       initPlayer()
@@ -197,17 +212,8 @@ export default {
 
     return {
       ...toRefs(state),
-      videoWrapRef,
-      videoRef,
-      dotVisiable,
-      handleFocusProgress,
-      handleBlurProgress,
-      handlePlayAndPause,
-      handleFullScreen,
-      handleMuted,
+      ...propsAndFn,
       filterDuration,
-      handleMousemoveVideo,
-      handleMouseoutVideo,
     }
   },
 }
