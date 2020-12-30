@@ -13,7 +13,7 @@
     </video>
 
     <transition name="fade">
-      <div class="ivideo-control-wrap" v-show="showControl">
+      <div class="ivideo-control-wrap" v-show="controlVisiable">
         <div class="ivideo-control-top">
           <div
             class="ivideo-progress-bar"

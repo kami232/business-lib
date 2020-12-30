@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2020-12-30 17:13:06
+ * @LastEditTime: 2020-12-30 17:44:06
  * @Description: 自定义播放器逻辑文件
  */
 import {
@@ -26,15 +26,15 @@ import {
 export default function (props) {
   const videoWrapRef = ref(null) // 父容器引用
   const videoRef = ref(null) // video 引用
-  const dotVisiable = ref(false) // 进度条拖拽点显隐
-  const speedMenuVisiable = ref(false) // 倍率选项显隐
   const state = reactive({
     duration: 0, //视频时长
     isPaused: true, // 是否处于暂停
     isMuted: false, // 是否静音
     isFullScreen: false, // 是否处于全屏状态
-    showControl: true, // 控制台是否显示
-    speed: {}, // 当前的倍率
+    controlVisiable: true, // 控制台是否显示
+    speedMenuVisiable: false, // 速率菜单显隐
+    dotVisiable: false, // 进度条拖拽点显隐
+    speed: {}, // 当前的速率
   })
   let controlTimer = null // 控制台timer
   let speedTimer = null
@@ -170,7 +170,7 @@ export default function (props) {
     cssHelper(progressWrap, {
       transform: 'scale(1.01)',
     })
-    dotVisiable.value = true
+    state.dotVisiable = true
   }
 
   /**
@@ -185,7 +185,7 @@ export default function (props) {
     cssHelper(progressWrap, {
       transform: 'scale(1)',
     })
-    dotVisiable.value = false
+    state.dotVisiable = false
   }
 
   /**
@@ -228,14 +228,14 @@ export default function (props) {
    * @param {Object} e 事件参数
    */
   const handleMousemoveVideo = e => {
-    state.showControl = true
+    state.controlVisiable = true
     clearTimeout(controlTimer)
     const parentNode = videoWrapRef.value.querySelector(
       '.ivideo-control-wrap'
     )
     if (isNodeContain(parentNode, e.target)) return
     controlTimer = setTimeout(() => {
-      state.showControl = false
+      state.controlVisiable = false
     }, 1000)
   }
 
@@ -247,7 +247,7 @@ export default function (props) {
     clearTimeout(controlTimer)
     if (isNodeContain(videoWrapRef.value, e.relatedTarget)) return
     controlTimer = setTimeout(() => {
-      state.showControl = false
+      state.controlVisiable = false
     }, 1000)
   }
 
@@ -256,7 +256,7 @@ export default function (props) {
    */
   const handleHoverSpeed = () => {
     clearTimeout(speedTimer)
-    speedMenuVisiable.value = true
+    state.speedMenuVisiable = true
   }
 
   /**
@@ -266,7 +266,7 @@ export default function (props) {
     clearTimeout(speedTimer)
     if (isNodeContain(e.target, e.relatedTarget)) return
     speedTimer = setTimeout(() => {
-      speedMenuVisiable.value = false
+      state.speedMenuVisiable = false
     }, 500)
   }
 
@@ -276,7 +276,7 @@ export default function (props) {
    */
   const handleClickSpeedMenu = e => {
     if (state.speed.value == e.target.dataset.value) {
-      speedMenuVisiable.value = false
+      state.speedMenuVisiable = false
       return
     }
     const speedValue = e.target.dataset.value
@@ -285,7 +285,7 @@ export default function (props) {
     state.speed = speed
     // TODO 修改倍率
     videoRef.value.playbackRate = speed.value
-    speedMenuVisiable.value = false
+    state.speedMenuVisiable = false
   }
 
   /**
@@ -311,6 +311,10 @@ export default function (props) {
     config.value.endedCallback && config.value.endedCallback()
   }
 
+  const _handleTimeUpdate = () => {
+    console.log(videoRef.value.currentTime);
+  }
+
   /**
    * @description: 初始化播放器
    */
@@ -318,6 +322,7 @@ export default function (props) {
     _handleSetting()
     videoWrapRef.value.addEventListener('fullscreenchange', _handleScreen)
     videoRef.value.addEventListener('canplay', _handleCanPlay, false)
+    videoRef.value.addEventListener('timeupdate', _handleTimeUpdate)
     videoRef.value.addEventListener('ended', _handleEnded)
   }
 
@@ -327,6 +332,7 @@ export default function (props) {
   const destroyPlayer = () => {
     videoWrapRef.value.removeEventListener('fullscreenchange', _handleScreen)
     videoRef.value.removeEventListener('canplay', _handleCanPlay)
+    videoRef.value.removeEventListener('timeupdate', _handleTimeUpdate)
     videoRef.value.removeEventListener('ended', _handleEnded)
   }
 
@@ -335,8 +341,6 @@ export default function (props) {
     config,
     videoWrapRef,
     videoRef,
-    dotVisiable,
-    speedMenuVisiable,
     handleFocusProgress,
     handleBlurProgress,
     handlePlayAndPause,
