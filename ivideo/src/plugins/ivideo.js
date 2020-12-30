@@ -2,20 +2,25 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2020-12-30 15:26:31
+ * @LastEditTime: 2020-12-30 17:13:06
  * @Description: 自定义播放器逻辑文件
  */
 import {
   reactive,
   ref,
   computed,
+  watch
 } from 'vue'
+import {isEqual as _isEqual, isElement as _isElement, isFunction as _isFunction} from 'lodash'
 import {
   cssHelper,
   toFullVideo,
   exitFullscreen,
   isNodeContain,
 } from '@/assets/js/utils.js'
+import {
+  defaultConfig
+} from '@/assets/js/config.js'
 
 
 export default function (props) {
@@ -34,84 +39,123 @@ export default function (props) {
   let controlTimer = null // 控制台timer
   let speedTimer = null
 
-  /**
-   * @description: 默认配置
-   * 回调函数： playCallback: (status) => {} 暂停开始回调 false是播放中 true是暂停
-   * endedCallback 视频播放完毕回调
-   */
-  const defaultConfig = {
-    width: 512,
-    height: 288,
-    autoFit: false, // 是否自适应，开启后width、height失效
-    autoplay: false, // 如果为true,浏览器准备好时开始回放
-    muted: false, // 默认情况下将会消除任何音频
-    loop: false, // 循环
-    preload: 'metadata',
-    speed: {
-      open: true,
-      options: [
-        {
-          label: '0.5x',
-          value: 0.5
-        },
-        {
-          label: '1.0x',
-          value: 1
-        },
-        {
-          label: '1.5x',
-          value: 1.5
-        },
-        {
-          label: '2.0x',
-          value: 2
-        }
-      ],
-      defaultValue: 1
-    }
-  }
-
   // 合并配置
   const config = computed(() =>
     Object.assign({}, defaultConfig, props)
   )
 
+  // 监听配置的变化
+  watch(config, (newValue, oldValue) => {
+    const keys = Object.keys(newValue)
+
+    keys.forEach(key => {
+      // 如果是dom或函数不参与比较
+      if(_isElement(newValue[key]) || _isFunction(newValue[key])) return
+
+      if(_isEqual(newValue[key], oldValue[key])) {
+        return
+      }
+
+      if(key === 'size' && newValue.autoFit) {
+        return
+      }
+      _setVideo[key] && _setVideo[key](newValue[key])
+    })
+  }, {
+    deep: true
+  })
+
+  // 设置播放器, key要与配置项相同
+  const _setVideo = {
+    /**
+     * @description: 设置尺寸
+     * @param {object} size 宽高
+     */
+    size: size => {
+      const styleObj = {
+        width: `${size.width}px`,
+        height: `${size.height}px`,
+      }
+      cssHelper(videoWrapRef.value, styleObj)
+    },
+     /**
+     * @description: 设置窗口自适应
+     * @param {boolean} autoFit
+     */
+    autoFit: autoFit => {
+      if(typeof autoFit !== 'boolean') return
+
+      const styleObj = {
+        width: `100%`,
+        height: `100%`,
+      }
+      cssHelper(videoWrapRef.value, styleObj)
+    },
+    /**
+     * @description: 设置自动播放
+     * @param {boolean} autoplay
+     */
+    autoplay: autoplay => {
+      videoRef.value.autoplay = autoplay
+      autoplay && (state.isPaused = false)
+    },
+    /**
+     * @description: 设置静音
+     * @param {boolean} muted
+     */
+    muted: muted => {
+      videoRef.value.muted = muted
+      state.isMuted = muted
+    },
+    /**
+     * @description: 设置循环播放
+     * @param {boolean} loop
+     */
+    loop: loop => {
+      videoRef.value.loop = loop
+    },
+    /**
+     * @description: 设置preload
+     * @param {string} preload
+     */
+    preload: preload => {
+      videoRef.value.preload = preload
+    },
+    /**
+     * @description: 设置速率
+     * @param {object} obj 速率配置
+     */
+    speed: obj => {
+      if (obj.options.length) {
+        const speed = obj.options.find(item => item.value === obj.defaultValue)
+        if (!speed) {
+          throw new Error('There are no defaultValue in the options')
+        }
+        state.speed = speed
+        videoRef.value.playbackRate = speed.value
+      }
+    }
+  }
+
   /**
    * @description: 基础设置
    */
   const _handleSetting = () => {
-    const styleObj = {
-      width: `${config.value.width}px`,
-      height: `${config.value.height}px`,
-    }
-
-    // 是否自适应父容器
-    if (config.value.autoFit) {
-      styleObj.width = '100%'
-      styleObj.height = '100%'
-    }
-
-    cssHelper(videoWrapRef.value, styleObj)
-
-    // 自动播放
-    videoRef.value.autoplay = config.value.autoplay
-    config.value.autoplay && (state.isPaused = false)
-    // 静音
-    videoRef.value.muted = config.value.muted
-    config.value.muted && (state.isMuted = true)
-
-    videoRef.value.loop = config.value.loop
-    videoRef.value.preload = config.value.preload
     videoRef.value.controls = false
 
-    if(config.value.speed.options.length) {
-      const speed = config.value.speed.options.find(item => item.value === config.value.speed.defaultValue)
-      if(!speed) {
-        throw new Error('There are no defaultValue in the options')
-      }
-      state.speed = speed
-      videoRef.value.playbackRate = speed.value
+    if(config.value.autoFit) {
+      _setVideo['autoFit'](config.value.autoFit)
+    } else {
+      _setVideo['size'](config.value.size)
     }
+
+    // 自动播放
+    _setVideo['autoplay'](config.value.autoplay)
+    // 静音
+    _setVideo['muted'](config.value.muted)
+    _setVideo['loop'](config.value.loop)
+    _setVideo['preload'](config.value.preload)
+    _setVideo['speed'](config.value.speed)
   }
 
   /**
@@ -164,8 +208,7 @@ export default function (props) {
   const handleMuted = () => {
     const isMuted = videoRef.value.muted
 
-    videoRef.value.muted = !isMuted
-    state.isMuted = !isMuted
+    _setVideo['muted'](!isMuted)
     config.value.mutedCallback && config.value.mutedCallback(!isMuted)
   }
 
@@ -232,13 +275,13 @@ export default function (props) {
    * @param {Object} e 事件对象
    */
   const handleClickSpeedMenu = e => {
-    if(state.speed.value == e.target.dataset.value) {
+    if (state.speed.value == e.target.dataset.value) {
       speedMenuVisiable.value = false
       return
     }
     const speedValue = e.target.dataset.value
     const speed = config.value.speed.options.find(item => item.value == speedValue)
-    if(!speed) return
+    if (!speed) return
     state.speed = speed
     // TODO 修改倍率
     videoRef.value.playbackRate = speed.value
@@ -256,8 +299,7 @@ export default function (props) {
    * @description: 监听全屏事件
    */
   const _handleScreen = () => {
-    state.isFullScreen =
-      document.fullscreenElement == videoWrapRef.value ? true : false
+    state.isFullScreen = document.fullscreenElement == videoWrapRef.value ? true : false
   }
 
   /**

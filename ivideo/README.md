@@ -4,8 +4,9 @@
 
 ## 配置 `options`
 
-- `width: {number}` 视频窗口宽度，默认 512px。
-- `height: {number}` 视频窗口高度，默认 288px。
+- `size: {object}` 设置视频窗口宽高。
+  - `width: {number}` 视频窗口宽度，默认 512px。
+  - `height: {number}` 视频窗口高度，默认 288px。
 - `autoFit: {boolean}` 视频窗口是否自适应宽高，默认 `false`。注意：开启时 `width`、`height` 会失效。
 - `autoplay: {boolean}` 视频自动播放，默认 `false` 。
 - `muted: {boolean}` 静音，默认 `false`。
@@ -19,6 +20,7 @@
   - `defaultValue: {number}` 默认选项。
 - `playCallback: {function}` 视频播放暂停回调，同时会回传一个布尔值，`false`是播放中，`true`是暂停。
 - `endedCallback: {function}` 视频播放完毕回调。
+- `mutedCallback: {function}` 静音回调，同时会回传一个布尔值，`false`是静音，`true`是静音。
 
 
 
