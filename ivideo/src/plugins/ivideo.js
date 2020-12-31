@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2020-12-30 17:44:06
+ * @LastEditTime: 2020-12-31 18:32:57
  * @Description: 自定义播放器逻辑文件
  */
 import {
@@ -35,6 +35,7 @@ export default function (props) {
     speedMenuVisiable: false, // 速率菜单显隐
     dotVisiable: false, // 进度条拖拽点显隐
     speed: {}, // 当前的速率
+    currentTime: 0, // 当前播放时间，秒
   })
   let controlTimer = null // 控制台timer
   let speedTimer = null
@@ -312,7 +313,11 @@ export default function (props) {
   }
 
   const _handleTimeUpdate = () => {
-    console.log(videoRef.value.currentTime);
+    state.currentTime = videoRef.value.currentTime
+    const ratio = (state.currentTime / state.duration).toFixed(4)
+
+    videoWrapRef.value.querySelector('.bar-progress').style.width = `${ratio * 100}%`
+    console.log(ratio);
   }
 
   /**

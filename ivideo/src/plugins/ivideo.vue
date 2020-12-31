@@ -56,7 +56,7 @@
             </div>
 
             <div class="ivideo-control-duration">
-              00:00 / {{ filterDuration(duration) }}
+              {{ filterDuration(currentTime) }} / {{ filterDuration(duration) }}
             </div>
           </div>
 

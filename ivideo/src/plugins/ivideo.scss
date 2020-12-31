@@ -56,9 +56,10 @@
       left: 0;
       top: 0;
       bottom: 0;
-      width: 50%;
+      width: 0%;
       transform-origin: 0 0;
       background-color: rgba(255, 255, 255, 0.3);
+      transition: width .2s linear;
     }
 
     .bar-progress {
@@ -66,7 +67,7 @@
       left: 0;
       top: 0;
       bottom: 0;
-      width: 30%;
+      width: 0%;
       transform-origin: 0 0;
       background-color: #7d72b6;
 
