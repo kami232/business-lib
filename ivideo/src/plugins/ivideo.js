@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2021-01-05 15:31:15
+ * @LastEditTime: 2021-01-05 18:34:13
  * @Description: 自定义播放器逻辑文件
  */
 import {
@@ -38,6 +38,7 @@ export default function (props) {
     isFullScreen: false, // 是否处于全屏状态
     controlVisiable: true, // 控制台是否显示
     speedMenuVisiable: false, // 速率菜单显隐
+    volume: 1, // 当前音量
     volumeControlVisiable: false, // 音量控制显隐
     dotVisiable: false, // 进度条拖拽点显隐
     speed: {
@@ -48,7 +49,13 @@ export default function (props) {
   })
   let controlTimer = null // 控制台timer
   let speedTimer = null
+  let volumeBlurTimer = null // 音量失焦timer
   let progressBarW = 0 // 进度条总长度
+  // 音量触摸事件
+  const volumeData = {
+    touch: false,
+    wrapRect: null, // 音量控件的高度
+  }
 
   // 合并配置
   const config = computed(() =>
@@ -119,6 +126,16 @@ export default function (props) {
       state.isMuted = muted
     },
     /**
+     * @description: 设置音量
+     * @param {number} volume
+     */
+    volume: volume => {
+      state.volume = volume
+      videoRef.value.volume = volume
+      videoControlRef.value.querySelector('.volume-progress').style.transform = `scaleY(${volume})`
+      videoControlRef.value.querySelector('.volume-dot').style.top = `${(1 - volume) * volumeData.wrapRect.height}px`
+    },
+    /**
      * @description: 设置循环播放
      * @param {boolean} loop
      */
@@ -153,6 +170,7 @@ export default function (props) {
    */
   const _handleSetting = () => {
     videoRef.value.controls = false
+    _setVideo['volume'](1)
     // 设置控制栏是否显示
     state.controlVisiable = Boolean(config.value.controls)
 
@@ -175,23 +193,14 @@ export default function (props) {
    * @description: 进度条焦点
    * @param {Object} e
    */
-  const handleFocusProgress = e => {
-    const progressSlider = videoControlRef.value.querySelector(
-      '.ivideo-progress-slider'
-    )
-    if (isNodeContain(progressSlider, e.relatedTarget)) return
+  const handleFocusProgress = () => {
     state.dotVisiable = true
   }
 
   /**
    * @description: 进度条失去焦点
-   * @param {Object} e
    */
-  const handleBlurProgress = e => {
-    const progressWrap = videoControlRef.value.querySelector(
-      '.ivideo-progress-slider'
-    )
-    if (isNodeContain(progressWrap, e.relatedTarget)) return
+  const handleBlurProgress = () => {
     state.dotVisiable = false
   }
 
@@ -219,14 +228,65 @@ export default function (props) {
     config.value.mutedCallback && config.value.mutedCallback(!isMuted)
   }
 
-
+  /**
+   * @description: 音量移入
+   */
   const handleHoverVolume = () => {
-
+    clearTimeout(volumeBlurTimer)
+    state.volumeControlVisiable = true
   }
 
-
+  /**
+   * @description: 音量移出
+   * @param {object} e
+   */
   const handleBlurVolume = () => {
+    clearTimeout(volumeBlurTimer)
+    volumeBlurTimer = setTimeout(() => {
+      state.volumeControlVisiable = false
+    }, 500)
+  }
 
+  /**
+   * @description: 计算音量比值
+   * @param {object} e 事件对象
+   * @return {*}
+   */
+  const _computedVolume = e => {
+    const diffY = e.clientY - volumeData.wrapRect.y >= 0 ? e.clientY - volumeData.wrapRect.y : 0
+    let diff = volumeData.wrapRect.height - diffY
+    diff = diff >= 0 ? diff : 0
+    const volume = (diff / volumeData.wrapRect.height).toFixed(2)
+    _setVideo['volume'](volume)
+  }
+
+  /**
+   * @description: 音量触摸开始
+   * @param {object} e 事件对象
+   * @return {*}
+   */
+  const handleTouchStartVolume = e => {
+    volumeData.wrapRect = videoControlRef.value.querySelector('.volume-bar-wrap').getBoundingClientRect()
+    volumeData.touch = true
+    // TODO 改变音量
+    _computedVolume(e)
+  }
+
+  /**
+   * @description: 音量触摸移动
+   * @param {object} e 事件对象
+   */
+  const handleTouchMoveVolume = e => {
+    if (!volumeData.touch) return
+    _computedVolume(e)
+  }
+
+  /**
+   * @description: 音量触摸结束
+   * @param {object} e 事件对象
+   */
+  const handleTouchEndVolume = () => {
+    volumeData.touch = false
   }
 
   /**
@@ -257,13 +317,11 @@ export default function (props) {
 
   /**
    * @description: 鼠标移出事件
-   * @param {Object} e 事件参数
    */
-  const handleMouseoutVideo = e => {
+  const handleMouseoutVideo = () => {
     if (!config.value.controls) return
 
     clearTimeout(controlTimer)
-    if (isNodeContain(videoWrapRef.value, e.relatedTarget)) return
     controlTimer = setTimeout(() => {
       state.controlVisiable = false
     }, 1000)
@@ -273,7 +331,7 @@ export default function (props) {
    * @description: 倍率移入
    */
   const handleHoverSpeed = () => {
-    if(!config.value.speed || !config.value.speed.options || !config.value.speed.options.length) return
+    if (!config.value.speed || !config.value.speed.options || !config.value.speed.options.length) return
     clearTimeout(speedTimer)
     state.speedMenuVisiable = true
   }
@@ -281,10 +339,9 @@ export default function (props) {
   /**
    * @description: 倍率移出
    */
-  const handleBlurSpeed = e => {
-    if(!config.value.speed || !config.value.speed.options || !config.value.speed.options.length) return
+  const handleBlurSpeed = () => {
+    if (!config.value.speed || !config.value.speed.options || !config.value.speed.options.length) return
     clearTimeout(speedTimer)
-    if (isNodeContain(e.target, e.relatedTarget)) return
     speedTimer = setTimeout(() => {
       state.speedMenuVisiable = false
     }, 500)
@@ -354,6 +411,7 @@ export default function (props) {
    * @description: 初始化播放器
    */
   const initPlayer = () => {
+    volumeData.wrapRect = videoControlRef.value.querySelector('.volume-bar-wrap').getBoundingClientRect()
     _handleSetting()
     videoWrapRef.value.addEventListener('fullscreenchange', _handleScreen)
     videoRef.value.addEventListener('canplay', _handleCanPlay, false)
@@ -385,6 +443,9 @@ export default function (props) {
     handleMuted,
     handleHoverVolume,
     handleBlurVolume,
+    handleTouchStartVolume,
+    handleTouchMoveVolume,
+    handleTouchEndVolume,
     handleMousemoveVideo,
     handleMouseoutVideo,
     handleHoverSpeed,

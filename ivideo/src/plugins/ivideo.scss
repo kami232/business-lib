@@ -208,13 +208,13 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
           width: 100%;
           height: 60px;
           cursor: pointer;
         }
 
         .volume-bar {
+          overflow: hidden;
           position: relative;
           width: 2px;
           height: 100%;
@@ -229,7 +229,7 @@
           right: 0;
           bottom: 0;
           transform-origin: 0 100%;
-          transform: scaleY(0.5);
+          transform: scaleY(1);
           background-color: #7d72b6;
         }
 
@@ -239,6 +239,7 @@
           width: 10px;
           height: 10px;
           border-radius: 50%;
+          transform: translateY(-50%);
           background-color: #7d72b6;
         }
       }

@@ -3,9 +3,14 @@
     class="ivideo"
     ref="videoWrapRef"
     @mousemove="handleMousemoveVideo"
-    @mouseout="handleMouseoutVideo"
+    @mouseleave="handleMouseoutVideo"
   >
-    <video class="ivideo-player" ref="videoRef" @click="handlePlayAndPause" @dblclick="handleFullScreen">
+    <video
+      class="ivideo-player"
+      ref="videoRef"
+      @click="handlePlayAndPause"
+      @dblclick="handleFullScreen"
+    >
       <source
         src="https://huohucloud.9ishouyou.com/video/sp1.mp4"
         type="video/mp4"
@@ -13,12 +18,16 @@
     </video>
 
     <transition name="fade">
-      <div class="ivideo-control-wrap" ref="videoControlRef" v-show="controlVisiable">
+      <div
+        class="ivideo-control-wrap"
+        ref="videoControlRef"
+        v-show="controlVisiable"
+      >
         <div class="ivideo-control-top">
           <div
             class="ivideo-progress-slider"
-            @mouseover="handleFocusProgress"
-            @mouseout="handleBlurProgress"
+            @mouseenter="handleFocusProgress"
+            @mouseleave="handleBlurProgress"
           >
             <div class="ivideo-progress-bar">
               <div class="bar-buffer"></div>
@@ -57,7 +66,10 @@
               </span>
             </div>
 
-            <div class="ivideo-control-duration" v-if="config.controlBar.timeDivider">
+            <div
+              class="ivideo-control-duration"
+              v-if="config.controlBar.timeDivider"
+            >
               {{ filterDuration(currentTime) }} / {{ filterDuration(duration) }}
             </div>
           </div>
@@ -70,7 +82,7 @@
             <div
               class="ivideo-control-btn ivideo-control-btn-speed"
               v-if="config.controlBar.speed"
-              @mouseover="handleHoverSpeed"
+              @mouseenter="handleHoverSpeed"
               @mouseleave="handleBlurSpeed"
             >
               <button class="ivideo-control-speed-name">
@@ -99,11 +111,10 @@
             <div
               class="ivideo-control-btn ivideo-control-btn-volume"
               v-if="config.controlBar.volume"
-              @click="handleMuted"
-              @mouseover="handleHoverVolume"
+              @mouseenter="handleHoverVolume"
               @mouseleave="handleBlurVolume"
             >
-              <span class="ivideo-control-svg">
+              <span class="ivideo-control-svg" @click="handleMuted">
                 <!-- 音量 -->
                 <svg
                   viewBox="0 0 1024 1024"
@@ -134,8 +145,13 @@
               </span>
 
               <div class="volume-control" v-show="volumeControlVisiable">
-                <div class="volume-num">100</div>
-                <div class="volume-bar-wrap">
+                <div class="volume-num">{{ Math.floor(volume * 100) }}</div>
+                <div
+                  class="volume-bar-wrap"
+                  @mousedown="handleTouchStartVolume"
+                  @mousemove="handleTouchMoveVolume"
+                  @mouseup="handleTouchEndVolume"
+                >
                   <div class="volume-bar">
                     <div class="volume-progress"></div>
                   </div>
@@ -162,7 +178,11 @@
               </span>
             </div>
 
-            <div class="ivideo-control-btn" v-if="config.controlBar.fullScreen" @click="handleFullScreen">
+            <div
+              class="ivideo-control-btn"
+              v-if="config.controlBar.fullScreen"
+              @click="handleFullScreen"
+            >
               <span class="ivideo-control-svg">
                 <!-- 全屏 -->
                 <svg
