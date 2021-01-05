@@ -5,7 +5,7 @@
     @mousemove="handleMousemoveVideo"
     @mouseout="handleMouseoutVideo"
   >
-    <video class="ivideo-player" ref="videoRef">
+    <video class="ivideo-player" ref="videoRef" @click="handlePlayAndPause" @dblclick="handleFullScreen">
       <source
         src="https://huohucloud.9ishouyou.com/video/sp1.mp4"
         type="video/mp4"
@@ -13,15 +13,17 @@
     </video>
 
     <transition name="fade">
-      <div class="ivideo-control-wrap" v-show="controlVisiable">
+      <div class="ivideo-control-wrap" ref="videoControlRef" v-show="controlVisiable">
         <div class="ivideo-control-top">
           <div
-            class="ivideo-progress-bar"
+            class="ivideo-progress-slider"
             @mouseover="handleFocusProgress"
             @mouseout="handleBlurProgress"
           >
-            <div class="bar-buffer"></div>
-            <div class="bar-progress">
+            <div class="ivideo-progress-bar">
+              <div class="bar-buffer"></div>
+              <div class="bar-progress"></div>
+
               <transition name="fade">
                 <div class="bar-progress-dot" v-show="dotVisiable"></div>
               </transition>
@@ -37,8 +39,8 @@
                   viewBox="0 0 1024 1024"
                   version="1.1"
                   xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   fill="#fff"
                 >
                   <g v-if="isPaused">
@@ -55,7 +57,7 @@
               </span>
             </div>
 
-            <div class="ivideo-control-duration">
+            <div class="ivideo-control-duration" v-if="config.controlBar.timeDivider">
               {{ filterDuration(currentTime) }} / {{ filterDuration(duration) }}
             </div>
           </div>
@@ -67,11 +69,13 @@
 
             <div
               class="ivideo-control-btn ivideo-control-btn-speed"
-              v-if="config.speed.open"
+              v-if="config.controlBar.speed"
               @mouseover="handleHoverSpeed"
               @mouseleave="handleBlurSpeed"
             >
-              <button class="ivideo-control-speed-name">{{speed.label}}</button>
+              <button class="ivideo-control-speed-name">
+                {{ speed.label }}
+              </button>
 
               <ul
                 class="speed-menu"
@@ -79,7 +83,10 @@
                 v-show="speedMenuVisiable && config.speed.options.length"
               >
                 <li
-                  :class="['speed-menu-item', {'active': speed.value === item.value}]"
+                  :class="[
+                    'speed-menu-item',
+                    { active: speed.value === item.value },
+                  ]"
                   :data-value="item.value"
                   v-for="(item, index) in config.speed.options"
                   :key="index"
@@ -91,7 +98,10 @@
 
             <div
               class="ivideo-control-btn ivideo-control-btn-volume"
+              v-if="config.controlBar.volume"
               @click="handleMuted"
+              @mouseover="handleHoverVolume"
+              @mouseleave="handleBlurVolume"
             >
               <span class="ivideo-control-svg">
                 <!-- 音量 -->
@@ -99,8 +109,8 @@
                   viewBox="0 0 1024 1024"
                   version="1.1"
                   xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   fill="#fff"
                 >
                   <g v-if="!isMuted">
@@ -123,7 +133,7 @@
                 </svg>
               </span>
 
-              <!-- <div class="volume-control">
+              <div class="volume-control" v-show="volumeControlVisiable">
                 <div class="volume-num">100</div>
                 <div class="volume-bar-wrap">
                   <div class="volume-bar">
@@ -131,7 +141,7 @@
                   </div>
                   <div class="volume-dot"></div>
                 </div>
-              </div> -->
+              </div>
             </div>
 
             <div class="ivideo-control-btn ivideo-control-btn-picture">
@@ -141,8 +151,8 @@
                   viewBox="0 0 1024 1024"
                   version="1.1"
                   xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   fill="#fff"
                 >
                   <path
@@ -152,15 +162,15 @@
               </span>
             </div>
 
-            <div class="ivideo-control-btn" @click="handleFullScreen">
+            <div class="ivideo-control-btn" v-if="config.controlBar.fullScreen" @click="handleFullScreen">
               <span class="ivideo-control-svg">
                 <!-- 全屏 -->
                 <svg
                   viewBox="0 0 1024 1024"
                   version="1.1"
                   xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   fill="#fff"
                 >
                   <g v-if="!isFullScreen">

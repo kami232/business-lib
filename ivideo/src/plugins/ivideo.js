@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2020-12-31 18:32:57
+ * @LastEditTime: 2021-01-05 15:31:15
  * @Description: 自定义播放器逻辑文件
  */
 import {
@@ -11,7 +11,11 @@ import {
   computed,
   watch
 } from 'vue'
-import {isEqual as _isEqual, isElement as _isElement, isFunction as _isFunction} from 'lodash'
+import {
+  isEqual as _isEqual,
+  isElement as _isElement,
+  isFunction as _isFunction
+} from 'lodash'
 import {
   cssHelper,
   toFullVideo,
@@ -26,6 +30,7 @@ import {
 export default function (props) {
   const videoWrapRef = ref(null) // 父容器引用
   const videoRef = ref(null) // video 引用
+  const videoControlRef = ref(null) // video 控制台 引用
   const state = reactive({
     duration: 0, //视频时长
     isPaused: true, // 是否处于暂停
@@ -33,12 +38,17 @@ export default function (props) {
     isFullScreen: false, // 是否处于全屏状态
     controlVisiable: true, // 控制台是否显示
     speedMenuVisiable: false, // 速率菜单显隐
+    volumeControlVisiable: false, // 音量控制显隐
     dotVisiable: false, // 进度条拖拽点显隐
-    speed: {}, // 当前的速率
+    speed: {
+      label: '1.0x',
+      value: 1
+    }, // 当前的速率
     currentTime: 0, // 当前播放时间，秒
   })
   let controlTimer = null // 控制台timer
   let speedTimer = null
+  let progressBarW = 0 // 进度条总长度
 
   // 合并配置
   const config = computed(() =>
@@ -51,13 +61,13 @@ export default function (props) {
 
     keys.forEach(key => {
       // 如果是dom或函数不参与比较
-      if(_isElement(newValue[key]) || _isFunction(newValue[key])) return
+      if (_isElement(newValue[key]) || _isFunction(newValue[key])) return
 
-      if(_isEqual(newValue[key], oldValue[key])) {
+      if (_isEqual(newValue[key], oldValue[key])) {
         return
       }
 
-      if(key === 'size' && newValue.autoFit) {
+      if (key === 'size' && newValue.autoFit) {
         return
       }
       _setVideo[key] && _setVideo[key](newValue[key])
@@ -79,12 +89,12 @@ export default function (props) {
       }
       cssHelper(videoWrapRef.value, styleObj)
     },
-     /**
+    /**
      * @description: 设置窗口自适应
      * @param {boolean} autoFit
      */
     autoFit: autoFit => {
-      if(typeof autoFit !== 'boolean') return
+      if (typeof autoFit !== 'boolean') return
 
       const styleObj = {
         width: `100%`,
@@ -127,7 +137,7 @@ export default function (props) {
      * @param {object} obj 速率配置
      */
     speed: obj => {
-      if (obj.options.length) {
+      if (obj.options && obj.options.length) {
         const speed = obj.options.find(item => item.value === obj.defaultValue)
         if (!speed) {
           throw new Error('There are no defaultValue in the options')
@@ -143,8 +153,10 @@ export default function (props) {
    */
   const _handleSetting = () => {
     videoRef.value.controls = false
+    // 设置控制栏是否显示
+    state.controlVisiable = Boolean(config.value.controls)
 
-    if(config.value.autoFit) {
+    if (config.value.autoFit) {
       _setVideo['autoFit'](config.value.autoFit)
     } else {
       _setVideo['size'](config.value.size)
@@ -163,14 +175,11 @@ export default function (props) {
    * @description: 进度条焦点
    * @param {Object} e
    */
-  const handleFocusProgress = (e) => {
-    const progressWrap = videoWrapRef.value.querySelector(
-      '.ivideo-progress-bar'
+  const handleFocusProgress = e => {
+    const progressSlider = videoControlRef.value.querySelector(
+      '.ivideo-progress-slider'
     )
-    if (isNodeContain(progressWrap, e.relatedTarget)) return
-    cssHelper(progressWrap, {
-      transform: 'scale(1.01)',
-    })
+    if (isNodeContain(progressSlider, e.relatedTarget)) return
     state.dotVisiable = true
   }
 
@@ -178,14 +187,11 @@ export default function (props) {
    * @description: 进度条失去焦点
    * @param {Object} e
    */
-  const handleBlurProgress = (e) => {
-    const progressWrap = videoWrapRef.value.querySelector(
-      '.ivideo-progress-bar'
+  const handleBlurProgress = e => {
+    const progressWrap = videoControlRef.value.querySelector(
+      '.ivideo-progress-slider'
     )
     if (isNodeContain(progressWrap, e.relatedTarget)) return
-    cssHelper(progressWrap, {
-      transform: 'scale(1)',
-    })
     state.dotVisiable = false
   }
 
@@ -213,6 +219,16 @@ export default function (props) {
     config.value.mutedCallback && config.value.mutedCallback(!isMuted)
   }
 
+
+  const handleHoverVolume = () => {
+
+  }
+
+
+  const handleBlurVolume = () => {
+
+  }
+
   /**
    * @description: 处理全屏和取消横屏
    */
@@ -229,12 +245,11 @@ export default function (props) {
    * @param {Object} e 事件参数
    */
   const handleMousemoveVideo = e => {
+    if (!config.value.controls) return
+
     state.controlVisiable = true
     clearTimeout(controlTimer)
-    const parentNode = videoWrapRef.value.querySelector(
-      '.ivideo-control-wrap'
-    )
-    if (isNodeContain(parentNode, e.target)) return
+    if (isNodeContain(videoControlRef.value, e.target)) return
     controlTimer = setTimeout(() => {
       state.controlVisiable = false
     }, 1000)
@@ -245,6 +260,8 @@ export default function (props) {
    * @param {Object} e 事件参数
    */
   const handleMouseoutVideo = e => {
+    if (!config.value.controls) return
+
     clearTimeout(controlTimer)
     if (isNodeContain(videoWrapRef.value, e.relatedTarget)) return
     controlTimer = setTimeout(() => {
@@ -256,6 +273,7 @@ export default function (props) {
    * @description: 倍率移入
    */
   const handleHoverSpeed = () => {
+    if(!config.value.speed || !config.value.speed.options || !config.value.speed.options.length) return
     clearTimeout(speedTimer)
     state.speedMenuVisiable = true
   }
@@ -264,6 +282,7 @@ export default function (props) {
    * @description: 倍率移出
    */
   const handleBlurSpeed = e => {
+    if(!config.value.speed || !config.value.speed.options || !config.value.speed.options.length) return
     clearTimeout(speedTimer)
     if (isNodeContain(e.target, e.relatedTarget)) return
     speedTimer = setTimeout(() => {
@@ -301,6 +320,11 @@ export default function (props) {
    */
   const _handleScreen = () => {
     state.isFullScreen = document.fullscreenElement == videoWrapRef.value ? true : false
+    progressBarW = videoControlRef.value.querySelector('.ivideo-progress-bar').clientWidth // 获取进度条长度
+    // 移动进度点
+    const ratio = (state.currentTime / state.duration).toFixed(4)
+    const dotLeft = progressBarW * ratio
+    videoControlRef.value.querySelector('.bar-progress-dot').style.left = `${dotLeft}px`
   }
 
   /**
@@ -312,12 +336,18 @@ export default function (props) {
     config.value.endedCallback && config.value.endedCallback()
   }
 
+  /**
+   * @description: 监听播放进度
+   */
   const _handleTimeUpdate = () => {
-    state.currentTime = videoRef.value.currentTime
+    state.currentTime = videoRef.value.currentTime // 获取当前秒数
     const ratio = (state.currentTime / state.duration).toFixed(4)
+    // 进度条缩放
+    videoControlRef.value.querySelector('.bar-progress').style.transform = `scaleX(${ratio})`
 
-    videoWrapRef.value.querySelector('.bar-progress').style.width = `${ratio * 100}%`
-    console.log(ratio);
+    // 移动进度点
+    const dotLeft = progressBarW * ratio
+    videoControlRef.value.querySelector('.bar-progress-dot').style.left = `${dotLeft}px`
   }
 
   /**
@@ -329,6 +359,7 @@ export default function (props) {
     videoRef.value.addEventListener('canplay', _handleCanPlay, false)
     videoRef.value.addEventListener('timeupdate', _handleTimeUpdate)
     videoRef.value.addEventListener('ended', _handleEnded)
+    progressBarW = videoControlRef.value.querySelector('.ivideo-progress-bar').clientWidth // 获取进度条长度
   }
 
   /**
@@ -346,11 +377,14 @@ export default function (props) {
     config,
     videoWrapRef,
     videoRef,
+    videoControlRef,
     handleFocusProgress,
     handleBlurProgress,
     handlePlayAndPause,
     handleFullScreen,
     handleMuted,
+    handleHoverVolume,
+    handleBlurVolume,
     handleMousemoveVideo,
     handleMouseoutVideo,
     handleHoverSpeed,

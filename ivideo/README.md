@@ -11,9 +11,14 @@
 - `autoplay: {boolean}` 视频自动播放，默认 `false` 。
 - `muted: {boolean}` 静音，默认 `false`。
 - `loop: {boolean}` 是否循环播放，默认 `false`。
+- `controls: {boolean}` 是否显示控件，默认 `true`。
+- `controlBar: {object}` 选择显示自己的控件集。
+  - `fullScreen: {boolean}`  全屏控件，默认 `true`。
+  - `volume: {boolean}` 音量控件，默认 `true`。
+  - `timeDivider: {boolean}`  时间分频器，默认 `true`。
+  - `speed: {boolean}`  速率，默认 `true`。
 - `preload: {string}`
 - `speed: {object}` 视频速率配置。
-  - `open: {boolean}` 是否显示速率按钮，默认 `true`。
   - `options: {Array}` 速率选择菜单。
     - `label: {string}` 菜单选项名。
     - `value: {number}` 菜单选项值。
@@ -28,15 +33,23 @@
 
 ```javascript
 {
-    width: 512,
-    height: 288,
+    size: {
+        width: 512,
+    	height: 288,
+    },
     autoFit: false,
     autoplay: false,
     muted: false,
     loop: false,
+    controls: true,
+  	controlBar: {
+    	fullScreen: true,
+    	volume: true,
+    	timeDivider: true,
+    	speed: true,
+  	},
     preload: 'metadata',
     speed: {
-      open: true,
       options: [
         {
           label: '0.5x',
