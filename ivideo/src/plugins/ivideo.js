@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2021-01-05 18:34:13
+ * @LastEditTime: 2021-01-05 22:01:39
  * @Description: 自定义播放器逻辑文件
  */
 import {
@@ -21,6 +21,8 @@ import {
   toFullVideo,
   exitFullscreen,
   isNodeContain,
+  toPicInPic,
+  exitPicInPic
 } from '@/assets/js/utils.js'
 import {
   defaultConfig
@@ -36,6 +38,7 @@ export default function (props) {
     isPaused: true, // 是否处于暂停
     isMuted: false, // 是否静音
     isFullScreen: false, // 是否处于全屏状态
+    isPicInPic: false, // 是否处于画中画
     controlVisiable: true, // 控制台是否显示
     speedMenuVisiable: false, // 速率菜单显隐
     volume: 1, // 当前音量
@@ -141,6 +144,13 @@ export default function (props) {
      */
     loop: loop => {
       videoRef.value.loop = loop
+    },
+    /**
+     * @description: 设置画中画
+     * @param {boolean} bool
+     */
+    disablePictureInPicture: bool => {
+      videoRef.value.disablePictureInPicture = bool
     },
     /**
      * @description: 设置preload
@@ -366,6 +376,17 @@ export default function (props) {
   }
 
   /**
+   * @description: 点击画中画
+   */
+  const handlePicInPic = () => {
+    if (state.isPicInPic) {
+      exitPicInPic()
+    } else {
+      toPicInPic(videoRef.value)
+    }
+  }
+
+  /**
    * @description: 监听视频可以播放回调
    */
   const _handleCanPlay = () => {
@@ -408,6 +429,20 @@ export default function (props) {
   }
 
   /**
+   * @description: 监听进入画中画
+   */
+  const _handleEnterPicInPic = () => {
+    state.isPicInPic = true
+  }
+
+  /**
+   * @description: 监听离开画中画
+   */
+  const _handleLeavePicInPic = () => {
+    state.isPicInPic = false
+  }
+
+  /**
    * @description: 初始化播放器
    */
   const initPlayer = () => {
@@ -417,6 +452,9 @@ export default function (props) {
     videoRef.value.addEventListener('canplay', _handleCanPlay, false)
     videoRef.value.addEventListener('timeupdate', _handleTimeUpdate)
     videoRef.value.addEventListener('ended', _handleEnded)
+    videoRef.value.addEventListener('enterpictureinpicture', _handleEnterPicInPic);
+    videoRef.value.addEventListener('leavepictureinpicture', _handleLeavePicInPic);
+
     progressBarW = videoControlRef.value.querySelector('.ivideo-progress-bar').clientWidth // 获取进度条长度
   }
 
@@ -428,6 +466,8 @@ export default function (props) {
     videoRef.value.removeEventListener('canplay', _handleCanPlay)
     videoRef.value.removeEventListener('timeupdate', _handleTimeUpdate)
     videoRef.value.removeEventListener('ended', _handleEnded)
+    videoRef.value.removeEventListener('enterpictureinpicture', _handleEnterPicInPic);
+    videoRef.value.removeEventListener('leavepictureinpicture', _handleLeavePicInPic);
   }
 
   return {
@@ -451,6 +491,7 @@ export default function (props) {
     handleHoverSpeed,
     handleBlurSpeed,
     handleClickSpeedMenu,
+    handlePicInPic,
     initPlayer,
     destroyPlayer
   }

@@ -11,6 +11,7 @@
 - `autoplay: {boolean}` 视频自动播放，默认 `false` 。
 - `muted: {boolean}` 静音，默认 `false`。
 - `loop: {boolean}` 是否循环播放，默认 `false`。
+- `disablePictureInPicture: {boolean}` 禁止画中画，默认 `false`。
 - `controls: {boolean}` 是否显示控件，默认 `true`。
 - `controlBar: {object}` 选择显示自己的控件集。
   - `fullScreen: {boolean}`  全屏控件，默认 `true`。
@@ -41,6 +42,7 @@
     autoplay: false,
     muted: false,
     loop: false,
+    disablePictureInPicture: false,
     controls: true,
   	controlBar: {
     	fullScreen: true,

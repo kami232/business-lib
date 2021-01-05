@@ -36,7 +36,7 @@ export const filterDuration = duration => {
 
 /**
  * @description: 控制全屏
- * @param {Element} el
+ * @param {Element} el 待全屏dom对象
  * @return {Promise}
  */
 export const toFullVideo = el => {
@@ -64,4 +64,24 @@ export const exitFullscreen = () => {
   } else if (document.webkitExitFullscreen) {
     document.webkitExitFullscreen()
   }
+}
+
+/**
+ * @description: 开启画中画
+ * @param {Element} el 视频对象
+ * @return {Promise}
+ */
+export const toPicInPic = el => {
+  return el.requestPictureInPicture().catch(() => {
+    console. error('The video failed to open picture in picture')
+  })
+}
+
+/**
+ * @description: 关闭画中画
+ */
+export const exitPicInPic = () => {
+  document.exitPictureInPicture().catch(() => {
+    console.error('The video failed to close picture in picture')
+  })
 }

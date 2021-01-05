@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-30 15:55:24
  * @LastEditors: kim
- * @LastEditTime: 2021-01-05 15:22:01
+ * @LastEditTime: 2021-01-05 22:02:22
  * @Description: 配置文件
  */
 /**
@@ -19,6 +19,7 @@ export const defaultConfig = {
   autoplay: false, // 如果为true,浏览器准备好时开始回放
   muted: false, // 默认情况下将会消除任何音频
   loop: false, // 循环
+  disablePictureInPicture: false, // 禁止画中画
   controls: true, // 视频控制条是否显示
   controlBar: {
     fullScreen: true, // 全屏
