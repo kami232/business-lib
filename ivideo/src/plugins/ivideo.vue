@@ -5,6 +5,12 @@
     @mousemove="handleMousemoveVideo"
     @mouseleave="handleMouseoutVideo"
   >
+    <transition name="fade">
+      <div class="ivideo-header" v-show="title && controlVisiable">
+        <h3 class="ivideo-title">{{ title }}</h3>
+      </div>
+    </transition>
+
     <video
       class="ivideo-player"
       ref="videoRef"
@@ -12,8 +18,10 @@
       @dblclick="handleFullScreen"
     >
       <source
-        src="https://huohucloud.9ishouyou.com/video/sp1.mp4"
-        type="video/mp4"
+        :src="item.url"
+        :type="item.type"
+        v-for="(item, index) in dataSource"
+        :key="index"
       />
     </video>
 
@@ -233,7 +241,13 @@ import { filterDuration } from '@/assets/js/utils.js'
 import useIVideo from './ivideo.js'
 
 export default {
+  name: 'iVideo',
   props: {
+    title: String,
+    dataSource: {
+      type: Array,
+      default: () => [],
+    },
     options: {
       type: Object,
       default: () => ({}),

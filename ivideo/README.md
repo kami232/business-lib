@@ -1,6 +1,19 @@
 # ivideo
 
-小巧的 视频播放器（vue版）
+小巧的 视频播放器（vue3版）
+
+
+
+## Props
+
+- `title: {string}`  视频标题，不传则不显示。
+- `dataSource: {array}`  视频源。
+  - `type: {string}` 视频类型，如 `video/mp4` 等。
+  - `url: {string}` 视频链接。
+
+- `options: {object}` 配置项。
+
+
 
 ## 配置 `options`
 
@@ -73,5 +86,31 @@
       defaultValue: 1
     }
 }
+```
+
+
+
+## 基本使用
+
+```vue
+<template>
+	<ivideo :dataSource="dataSource" title="基本使用">
+</template>
+
+<script>
+	import { reactive } from 'vue'
+    export default {
+        setup() {
+            const dataSource = reactive([
+                type: 'video/mp4',
+                url: 'https://xxx.mp4'
+            ])
+            
+            return {
+                dataSource
+            }
+        }
+    }
+</script>
 ```
 

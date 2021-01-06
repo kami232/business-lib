@@ -1,5 +1,5 @@
 <template>
-  <ivideo :options="options" />
+  <ivideo :dataSource="dataSource" />
 </template>
 
 <script>
@@ -12,12 +12,15 @@ export default {
     ivideo,
   },
   setup() {
-    const options = reactive({
-      
-    })
+    const dataSource = reactive([
+      {
+        type: 'video/mp4',
+        url: 'https://huohucloud.9ishouyou.com/video/sp1.mp4'
+      }
+    ])
 
     return {
-      options,
+      dataSource,
     }
   },
 }
