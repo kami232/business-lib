@@ -2,7 +2,7 @@
  * @Author: kim
  * @Date: 2020-12-29 16:48:12
  * @LastEditors: kim
- * @LastEditTime: 2021-01-05 22:01:39
+ * @LastEditTime: 2021-01-06 11:40:01
  * @Description: 自定义播放器逻辑文件
  */
 import {
@@ -57,7 +57,12 @@ export default function (props) {
   // 音量触摸事件
   const volumeData = {
     touch: false,
-    wrapRect: null, // 音量控件的高度
+    wrapRect: {
+      height: 60
+    } // 音量控件的高度
+  }
+  const progressData = {
+    touch: false,
   }
 
   // 合并配置
@@ -125,8 +130,15 @@ export default function (props) {
      * @param {boolean} muted
      */
     muted: muted => {
-      videoRef.value.muted = muted
-      state.isMuted = muted
+      if (muted) {
+        _setVideo['volume'](0)
+      } else {
+        let volume = 1
+        if (state.isMuted) {
+          volume = 0.01
+        }
+        _setVideo['volume'](volume)
+      }
     },
     /**
      * @description: 设置音量
@@ -137,6 +149,15 @@ export default function (props) {
       videoRef.value.volume = volume
       videoControlRef.value.querySelector('.volume-progress').style.transform = `scaleY(${volume})`
       videoControlRef.value.querySelector('.volume-dot').style.top = `${(1 - volume) * volumeData.wrapRect.height}px`
+      // 当没有音量的时候静音
+      if (!volume) {
+        videoRef.value.muted = true
+        state.isMuted = true
+      }
+      if (volume && state.isMuted) {
+        videoRef.value.muted = false
+        state.isMuted = false
+      }
     },
     /**
      * @description: 设置循环播放
@@ -212,6 +233,7 @@ export default function (props) {
    */
   const handleBlurProgress = () => {
     state.dotVisiable = false
+    progressData.touch = false
   }
 
   /**
@@ -224,8 +246,48 @@ export default function (props) {
     } else {
       videoRef.value.pause()
     }
-    state.isPaused = !isPaused
     config.value.playCallback && config.value.playCallback(!isPaused)
+  }
+
+  /**
+   * @description: 计算实际进度
+   * @param {Object} e 事件对象
+   */
+  const _computedProgress = e => {
+    const diffX = e.clientX - progressData.wrapRect.x >= 0 ? e.clientX - progressData.wrapRect.x : 0
+    let diff = diffX <= progressData.wrapRect.width ? diffX : progressData.wrapRect.width
+    const ratio = Number((diff / progressData.wrapRect.width).toFixed(2))
+    videoRef.value.currentTime = ratio * state.duration
+  }
+
+  /**
+   * @description: 进度条触摸开始
+   * @param {Object} e 事件对象
+   */
+  const handleTouchStartProgress = e => {
+    progressData.touch = true
+    progressData.wrapRect = videoControlRef.value.querySelector('.ivideo-progress-slider').getBoundingClientRect()
+    videoRef.value.pause()
+
+    _computedProgress(e)
+  }
+
+  /**
+   * @description: 进度条触摸移动
+   * @param {Object} e 事件对象
+   */
+  const handleTouchMoveProgress = e => {
+    if (!progressData.touch) return
+    _computedProgress(e)
+  }
+
+  /**
+   * @description: 进度条触摸结束
+   */
+  const handleTouchEndProgress = () => {
+    progressData.touch = false
+    if(state.currentTime == state.duration) return
+    state.isPaused && videoRef.value.play()
   }
 
   /**
@@ -252,6 +314,7 @@ export default function (props) {
    */
   const handleBlurVolume = () => {
     clearTimeout(volumeBlurTimer)
+    handleTouchEndVolume()
     volumeBlurTimer = setTimeout(() => {
       state.volumeControlVisiable = false
     }, 500)
@@ -266,7 +329,7 @@ export default function (props) {
     const diffY = e.clientY - volumeData.wrapRect.y >= 0 ? e.clientY - volumeData.wrapRect.y : 0
     let diff = volumeData.wrapRect.height - diffY
     diff = diff >= 0 ? diff : 0
-    const volume = (diff / volumeData.wrapRect.height).toFixed(2)
+    const volume = Number((diff / volumeData.wrapRect.height).toFixed(2))
     _setVideo['volume'](volume)
   }
 
@@ -370,7 +433,6 @@ export default function (props) {
     const speed = config.value.speed.options.find(item => item.value == speedValue)
     if (!speed) return
     state.speed = speed
-    // TODO 修改倍率
     videoRef.value.playbackRate = speed.value
     state.speedMenuVisiable = false
   }
@@ -403,6 +465,20 @@ export default function (props) {
     const ratio = (state.currentTime / state.duration).toFixed(4)
     const dotLeft = progressBarW * ratio
     videoControlRef.value.querySelector('.bar-progress-dot').style.left = `${dotLeft}px`
+  }
+
+  /**
+   * @description: 监听开始播放
+   */
+  const _handlePlay = () => {
+    state.isPaused = false
+  }
+
+  /**
+   * @description: 监听暂停
+   */
+  const _handlePause = () => {
+    state.isPaused = true
   }
 
   /**
@@ -446,11 +522,12 @@ export default function (props) {
    * @description: 初始化播放器
    */
   const initPlayer = () => {
-    volumeData.wrapRect = videoControlRef.value.querySelector('.volume-bar-wrap').getBoundingClientRect()
     _handleSetting()
     videoWrapRef.value.addEventListener('fullscreenchange', _handleScreen)
     videoRef.value.addEventListener('canplay', _handleCanPlay, false)
     videoRef.value.addEventListener('timeupdate', _handleTimeUpdate)
+    videoRef.value.addEventListener('play', _handlePlay)
+    videoRef.value.addEventListener('pause', _handlePause)
     videoRef.value.addEventListener('ended', _handleEnded)
     videoRef.value.addEventListener('enterpictureinpicture', _handleEnterPicInPic);
     videoRef.value.addEventListener('leavepictureinpicture', _handleLeavePicInPic);
@@ -466,6 +543,8 @@ export default function (props) {
     videoRef.value.removeEventListener('canplay', _handleCanPlay)
     videoRef.value.removeEventListener('timeupdate', _handleTimeUpdate)
     videoRef.value.removeEventListener('ended', _handleEnded)
+    videoRef.value.removeEventListener('play', _handlePlay)
+    videoRef.value.removeEventListener('pause', _handlePause)
     videoRef.value.removeEventListener('enterpictureinpicture', _handleEnterPicInPic);
     videoRef.value.removeEventListener('leavepictureinpicture', _handleLeavePicInPic);
   }
@@ -479,6 +558,9 @@ export default function (props) {
     handleFocusProgress,
     handleBlurProgress,
     handlePlayAndPause,
+    handleTouchStartProgress,
+    handleTouchMoveProgress,
+    handleTouchEndProgress,
     handleFullScreen,
     handleMuted,
     handleHoverVolume,

@@ -28,6 +28,9 @@
             class="ivideo-progress-slider"
             @mouseenter="handleFocusProgress"
             @mouseleave="handleBlurProgress"
+            @mousedown="handleTouchStartProgress"
+            @mousemove="handleTouchMoveProgress"
+            @mouseup="handleTouchEndProgress"
           >
             <div class="ivideo-progress-bar">
               <div class="bar-buffer"></div>
